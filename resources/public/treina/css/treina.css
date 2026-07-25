@@ -167,19 +167,43 @@ input.search { width: 100%; margin-bottom: 16px; }
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   padding: 16px 18px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124, 58, 237, 0.14); }
-.card.editing { flex-direction: column; align-items: stretch; }
-.card.editing input { margin-bottom: 8px; }
-.card-body { flex: 1; cursor: pointer; }
-.card-body h3 { margin: 0; font-size: 1.05em; font-weight: 600; letter-spacing: -0.01em; }
-.card-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.card-actions button { padding: 6px 12px; font-size: 0.82em; }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+.card-title { font-size: 1.05em; font-weight: 600; letter-spacing: -0.01em; }
+/* Jumps into the sessions; only on a closed card. */
+.jump-btn { font-size: 1.1em; padding: 2px 8px; }
+.jump-btn:hover { color: var(--accent); }
+
+.card-details { margin-top: 12px; }
+.card-details .desc { margin: 0; cursor: text; }
+.edit-icon {
+  background: none;
+  border: none;
+  color: var(--muted-text);
+  padding: 0;
+  font-size: 0.95em;
+}
+.edit-icon:hover { background: none; transform: none; color: var(--accent); }
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+.card-footer button { padding: 6px 12px; font-size: 0.82em; }
+
+.card-edit { margin-top: 12px; }
+.card-edit input { margin-bottom: 8px; }
+.card-edit-buttons { display: flex; gap: 6px; }
+.card-edit-buttons button { padding: 6px 12px; font-size: 0.82em; }
 
 /* ---- sessions: a flowing notes log, not cards ---- */
 .detail-head { margin-bottom: 18px; }

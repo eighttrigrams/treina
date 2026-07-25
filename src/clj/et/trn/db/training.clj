@@ -20,17 +20,28 @@
      (tel/log! {:level :info :data {:training-id (:id result) :user-id user-id}} "Training added")
      result)))
 
+(def ^:private last-session-date
+  "Correlated subquery: the newest session date of a training, NULL when it has
+  none. Dates are `YYYY-MM-DD` text, so max() orders them correctly."
+  [{:select [[[:max :s.date]]]
+    :from [[:sessions :s]]
+    :where [:= :s.training_id :trainings.id]}
+   :last_session_date])
+
 (defn list-trainings
+  "Most recently trained first — the training whose last session is the newest
+  sits topmost. Trainings without sessions fall to the bottom (SQLite sorts NULL
+  last under DESC), alphabetically among themselves."
   ([ds user-id] (list-trainings ds user-id {}))
   ([ds user-id {:keys [search-term]}]
    (let [user-where (db/user-id-where-clause user-id)
          search-clause (db/build-search-clause search-term [:name :description])
          where-clause (into [:and user-where] (filter some? [search-clause]))]
      (jdbc/execute! (db/get-conn ds)
-       (sql/format {:select select-columns
+       (sql/format {:select (conj select-columns last-session-date)
                     :from [:trainings]
                     :where where-clause
-                    :order-by [[[:lower :name] :asc]]})
+                    :order-by [[:last_session_date :desc] [[:lower :name] :asc]]})
        db/jdbc-opts))))
 
 (defn training-owned-by-user? [ds training-id user-id]
