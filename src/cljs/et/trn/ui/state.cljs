@@ -37,6 +37,13 @@
     {"Authorization" (str "Bearer " token)}
     {}))
 
+(defn narrow-viewport?
+  "True on phone-sized screens, where treina is for reading: the edit modals stay
+  shut and their affordances are hidden in CSS (see css/mobile.css). Read live
+  rather than cached, so rotating or resizing needs no reload."
+  []
+  (.-matches (js/window.matchMedia "(max-width: 640px)")))
+
 (defn set-error [msg]
   (swap! *app-state assoc :error msg))
 
@@ -120,7 +127,8 @@
     (err-handler "Could not update training")))
 
 (defn open-edit-training [training]
-  (swap! *app-state assoc :editing-training training))
+  (when-not (narrow-viewport?)
+    (swap! *app-state assoc :editing-training training)))
 
 (defn close-edit-training []
   (swap! *app-state assoc :editing-training nil))
@@ -192,9 +200,12 @@
       (when on-success (on-success)))
     (err-handler "Could not save the program")))
 
-(defn open-program-modal [mode]
-  (swap! *app-state assoc :program-modal mode)
-  (when (= :history mode) (fetch-program-versions)))
+(defn open-program-modal
+  "The history is worth reading on a phone; editing is not offered there."
+  [mode]
+  (when (or (= :history mode) (not (narrow-viewport?)))
+    (swap! *app-state assoc :program-modal mode)
+    (when (= :history mode) (fetch-program-versions))))
 
 (defn close-program-modal []
   (swap! *app-state assoc :program-modal nil))

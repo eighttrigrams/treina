@@ -61,9 +61,10 @@
         date (r/atom (:date session))
         notes (r/atom (:notes session))
         start-edit (fn [s]
-                     (reset! date (:date s))
-                     (reset! notes (:notes s))
-                     (reset! editing? true))]
+                     (when-not (state/narrow-viewport?)
+                       (reset! date (:date s))
+                       (reset! notes (:notes s))
+                       (reset! editing? true)))]
     (fn [session]
       (if @editing?
         (let [save #(state/update-session

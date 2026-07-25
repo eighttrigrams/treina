@@ -1,0 +1,71 @@
+/* Phone layout. Treina on a phone is for reading: the log, the program, the
+   videos. Everything that creates or edits steps aside (see also
+   et.trn.ui.state/narrow-viewport?, which stops the edit modals from opening at
+   this width), so what's left is a page you scroll. */
+
+@media (max-width: 640px) {
+  body { padding: 14px 12px 32px; }
+  h1 { font-size: 1.3em; }
+
+  /* Brand on one line, the tabs on their own scrollable row below it. */
+  .top-bar { flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .nav {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 7px 14px; }
+
+  /* Read-only on the phone: adding and editing are desktop work. */
+  .add-form,
+  .note-add,
+  .note-actions,
+  .note-placeholder,
+  .card-footer,
+  .edit-icon,
+  .flag-selector,
+  /* the channel list's remove button */
+  .card-header .icon-btn.danger,
+  /* the program modal opens on History here, so its Edit tab would be a dead
+     control */
+  .edit-tab { display: none; }
+  .program-page, .card-details .desc, .note-body { cursor: default; }
+
+  /* Cards and panels use the full width. */
+  .card { padding: 14px; }
+  .card-title { font-size: 1em; }
+  .notes { padding: 16px 14px; }
+  .note-head { flex-wrap: wrap; gap: 4px 10px; }
+  .program-page, .program-foot { max-width: none; }
+  .program-page { padding: 20px 16px; }
+  .calendar { max-width: none; }
+
+  /* Filter and shelf controls wrap instead of squeezing. */
+  .yt-bar { flex-wrap: wrap; }
+  .yt-bar-right { width: 100%; margin-left: 0; }
+  .video-embed { max-width: none; }
+
+  /* Modals (the program's History view is worth reading here) go near-full
+     screen. */
+  .modal { width: 96vw; max-width: none; }
+  .modal-header { flex-wrap: wrap; gap: 8px; }
+  .modal-tabs { margin-left: 0; }
+  .modal-body { padding: 14px; }
+  .modal-footer { padding: 12px 14px; }
+  .diff-view { height: 55vh; }
+  .diff-controls { flex-wrap: wrap; }
+  .diff-label { order: 3; width: 100%; }
+  .diff-mode { margin-left: 0; }
+}
+
+/* Touch screens: the lift-on-hover reads as a stuck state after a tap. */
+@media (hover: none) {
+  .card:hover { transform: none; box-shadow: var(--glass-shadow); }
+  .program-page:hover { box-shadow: var(--glass-shadow); }
+  /* Nothing to reveal on hover, so the entry controls stay visible. */
+  .note .note-actions { opacity: 1; }
+}

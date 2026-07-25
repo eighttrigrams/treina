@@ -22,6 +22,14 @@ Two views:
   version, and the modal's *History* view steps through the changes as diffs.
   So what the program said at any point in time stays recoverable.
 
+## On a phone
+
+Below 640px treina is a reading app: the log, the program (including its
+version history) and the videos, laid out for one column. Creating and editing
+is desktop work — those affordances are hidden in `css/mobile.css` and the edit
+modals refuse to open (`et.trn.ui.state/narrow-viewport?`), so nothing is
+half-usable under a thumb.
+
 Notes are edited in a CodeMirror editor using an **IJKL** keyboard scheme
 (⌘I/K/J/L to move, ⌥ for word/line steps, ⌃ for line ends, +⇧ to select) with
 **⌘9 to save**.

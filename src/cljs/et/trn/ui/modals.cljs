@@ -77,8 +77,10 @@
           [:div.modal-header
            [:span "Program"]
            [:div.modal-tabs
-            [:button.tab {:class (when (= :edit mode) "active")
-                          :on-click #(state/open-program-modal :edit)} "Edit"]
+            ;; .edit-tab so the phone layout can drop it — editing isn't offered
+            ;; there (css/mobile.css).
+            [:button.tab.edit-tab {:class (when (= :edit mode) "active")
+                                   :on-click #(state/open-program-modal :edit)} "Edit"]
             [:button.tab {:class (when (= :history mode) "active")
                           :on-click #(state/open-program-modal :history)} "History"]]]
           [:div.modal-body
