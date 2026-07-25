@@ -1,0 +1,104 @@
+/* Treina-specific layout. Relies on the theme variables from base.css. */
+
+.loading {
+  padding: 40px 4px;
+  color: var(--text-secondary);
+}
+
+/* ---- top bar ---- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  font-size: 1.4em;
+  color: var(--accent);
+  filter: drop-shadow(0 2px 6px rgba(124, 58, 237, 0.35));
+}
+.brand-name {
+  font-weight: 700;
+  font-size: 1.25em;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--accent), #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---- secondary / danger buttons (base button is the accent-filled primary) ---- */
+button.secondary {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+button.secondary:hover { background: var(--glass-bg-elevated); }
+button.danger {
+  background: rgba(255, 59, 48, 0.14);
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.25);
+}
+button.danger:hover { background: rgba(255, 59, 48, 0.22); }
+
+/* ---- page head ---- */
+.page-head { margin-bottom: 16px; }
+.tagline { margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.95em; }
+.desc { margin: 6px 0 0 0; color: var(--text-secondary); font-size: 0.92em; }
+.empty { color: var(--text-secondary); font-style: italic; padding: 24px 4px; }
+
+input.search { width: 100%; margin-bottom: 16px; }
+.add-form input { flex: 1; }
+
+/* ---- cards (trainings) ---- */
+.card-list { display: flex; flex-direction: column; gap: 12px; }
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124, 58, 237, 0.14); }
+.card.editing { flex-direction: column; align-items: stretch; }
+.card.editing input { margin-bottom: 8px; }
+.card-body { flex: 1; cursor: pointer; }
+.card-body h3 { margin: 0; font-size: 1.05em; font-weight: 600; letter-spacing: -0.01em; }
+.card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.card-actions button { padding: 6px 12px; font-size: 0.82em; }
+
+/* ---- sessions ---- */
+.detail-head { margin-bottom: 18px; }
+.back-btn { margin-bottom: 12px; padding: 6px 12px; font-size: 0.85em; }
+.detail-head h1 { margin: 0; }
+.session-list { display: flex; flex-direction: column; gap: 8px; }
+.session {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.session.editing { flex-direction: column; align-items: stretch; }
+.session.editing input { margin-bottom: 8px; }
+.session-body { display: flex; align-items: baseline; gap: 14px; flex: 1; min-width: 0; }
+.session-date {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.session-notes { color: var(--text-secondary); overflow-wrap: anywhere; }

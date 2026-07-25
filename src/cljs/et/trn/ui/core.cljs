@@ -1,0 +1,59 @@
+(ns et.trn.ui.core
+  (:require [reagent.dom.client :as rdomc]
+            [reagent.core :as r]
+            [et.trn.ui.state :as state]
+            [et.trn.ui.views.trainings :as trainings]
+            [et.trn.ui.views.sessions :as sessions]))
+
+(defn login-form []
+  (let [username (r/atom "")
+        password (r/atom "")]
+    (fn []
+      (let [do-login #(state/login @username @password
+                                   (fn [] (reset! username "") (reset! password "")))]
+        [:div.login-form
+         [:h2 "Sign in to Treina"]
+         (when-let [error (:error @state/*app-state)]
+           [:div.error error [:button.error-dismiss {:on-click state/clear-error} "×"]])
+         [:input {:type "text" :auto-complete "off" :placeholder "Username"
+                  :value @username
+                  :on-change #(reset! username (-> % .-target .-value))
+                  :on-key-down #(when (= (.-key %) "Enter") (do-login))}]
+         [:input {:type "password" :placeholder "Password"
+                  :value @password
+                  :on-change #(reset! password (-> % .-target .-value))
+                  :on-key-down #(when (= (.-key %) "Enter") (do-login))}]
+         [:button {:on-click do-login} "Sign in"]]))))
+
+(defn- top-bar []
+  [:div.top-bar
+   [:div.brand
+    [:span.brand-mark "◈"]
+    [:span.brand-name "Treina"]]
+   (when (:token @state/*app-state)
+     [:button.secondary {:on-click state/logout} "Sign out"])])
+
+(defn app []
+  (let [{:keys [auth-required? logged-in? view error]} @state/*app-state]
+    (cond
+      (nil? auth-required?)
+      [:div.loading "Loading…"]
+
+      (and auth-required? (not logged-in?))
+      [login-form]
+
+      :else
+      [:div
+       [top-bar]
+       (when error
+         [:div.error error [:button.error-dismiss {:on-click state/clear-error} "×"]])
+       [:div.main-layout
+        (case view
+          :training [sessions/sessions-tab]
+          [trainings/trainings-tab])]])))
+
+(defonce root (rdomc/create-root (.getElementById js/document "app")))
+
+(defn init []
+  (state/fetch-auth-required)
+  (rdomc/render root [app]))

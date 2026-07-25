@@ -1,0 +1,30 @@
+{:up ["CREATE TABLE users (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         username TEXT NOT NULL UNIQUE,
+         password_hash TEXT NOT NULL,
+         created_at DATETIME DEFAULT (datetime('now'))
+       )"
+      "CREATE TABLE trainings (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         name TEXT NOT NULL,
+         description TEXT DEFAULT '',
+         created_at DATETIME DEFAULT (datetime('now')),
+         modified_at DATETIME DEFAULT (datetime('now')),
+         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+       )"
+      "CREATE INDEX idx_trainings_user ON trainings (user_id)"
+      "CREATE TABLE sessions (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         training_id INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+         date TEXT,
+         notes TEXT DEFAULT '',
+         created_at DATETIME DEFAULT (datetime('now')),
+         modified_at DATETIME DEFAULT (datetime('now')),
+         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+       )"
+      "CREATE INDEX idx_sessions_training ON sessions (training_id)"]
+ :down ["DROP INDEX IF EXISTS idx_sessions_training"
+        "DROP TABLE IF EXISTS sessions"
+        "DROP INDEX IF EXISTS idx_trainings_user"
+        "DROP TABLE IF EXISTS trainings"
+        "DROP TABLE IF EXISTS users"]}
