@@ -35,6 +35,38 @@ calls `et.trn.server/build-app` with treina's `:apps :treina` sub-config.
 make build          # shadow-cljs release + uberjar
 ```
 
+## API
+
+The HTTP API **describes itself**:
+
+```bash
+curl localhost:3150/api/describe
+```
+
+That returns every route with its `method`, `path` and docstring — the handler
+docstrings *are* the documentation, so the listing can never drift from the code.
+It's unauthenticated and read-only.
+
+### Machine clients are read-only by default
+
+A token from `et.trn.auth/create-machine-token` is marked `:machine? true`. Such
+a caller may **read** anything, but its **writes are dropped** — logged and
+answered with `{"dropped":true}` — unless recording mode is on:
+
+```bash
+curl localhost:3150/api/recording-mode          # {"recording":false}
+curl -X POST localhost:3150/api/recording-mode/toggle
+```
+
+So an agent can discover and explore the API with no risk of mutating data, and
+you opt into writes deliberately. Human/browser tokens are unaffected.
+
+### Rate limiting
+
+All requests pass a global sliding window: **180/min in production, 720/min in
+dev**, overridable via `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS`.
+Over the limit returns a bare `429`.
+
 ## Architecture
 
 - `src/clj/et/trn` — ring/compojure backend, next.jdbc + honeysql over SQLite,

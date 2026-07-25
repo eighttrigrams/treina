@@ -11,6 +11,13 @@
   ([claims]
    (jwt/sign claims (jwt-secret))))
 
+(defn create-machine-token
+  "Token for a non-human API client (agent, script). Marked `:machine? true`,
+  which makes it **read-only by default**: reads pass, writes are dropped unless
+  recording mode is on (see et.trn.server.recording-mode)."
+  [user-id username]
+  (create-token {:user-id user-id :username username :is-admin false :machine? true}))
+
 (defn verify-token [token]
   (try
     (jwt/unsign token (jwt-secret))

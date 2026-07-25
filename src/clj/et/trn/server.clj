@@ -6,6 +6,7 @@
             [et.trn.server.training-handler :as training-handler]
             [et.trn.server.session-handler :as session-handler]
             [et.trn.auth :as auth]
+            [et.trn.server.recording-mode :as recording-mode]
             [et.trn.middleware.rate-limit :as rate-limit :refer [wrap-rate-limit]]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -56,8 +57,61 @@
              slurp
              (str/replace "__CACHE_BUST__" (str (cache-bust))))})
 
+(def ^:private describe-namespaces
+  "Namespaces whose public vars back HTTP routes. The /api/describe endpoint
+  walks these to enumerate the API surface from var metadata, so the docstring
+  on each handler *is* the API documentation."
+  '[et.trn.server
+    et.trn.server.user-handler
+    et.trn.server.training-handler
+    et.trn.server.session-handler])
+
+(def ^:private route-doc-re
+  "Route handlers document themselves as `METHOD /path — explanation`. Matching
+  on that keeps non-route helpers (build-app etc.) out of /api/describe, so the
+  listing only ever advertises things you can actually call."
+  #"(?s)^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)\s")
+
+(defn describe-handler
+  "GET /api/describe — enumerate the API surface: every route handler with its
+  method, path and docstring. Read-only and unauthenticated; lets an agent
+  discover the endpoints before calling them."
+  [_req]
+  {:status 200
+   :body (->> describe-namespaces
+              (mapcat (fn [ns-sym] (when-let [n (find-ns ns-sym)] (ns-publics n))))
+              (keep (fn [[sym v]]
+                      (let [doc (:doc (meta v))]
+                        (when-let [[_ method path] (some->> doc (re-find route-doc-re))]
+                          {:name (str sym)
+                           :ns (str (ns-name (.ns ^clojure.lang.Var v)))
+                           :method method
+                           :path path
+                           :arglists (pr-str (:arglists (meta v)))
+                           :doc doc}))))
+              (sort-by (juxt :path :method))
+              vec)})
+
+(defn recording-mode-handler
+  "GET /api/recording-mode — whether machine-token writes are currently allowed.
+  Machine tokens are read-only unless recording is on."
+  [_req]
+  {:status 200 :body {:recording (recording-mode/enabled?)}})
+
+(defn toggle-recording-mode-handler
+  "POST /api/recording-mode/toggle — flip the machine-write gate on/off."
+  [_req]
+  (let [now (recording-mode/toggle!)]
+    (tel/log! {:level :info :data {:recording now}}
+              (str "RECORDING MODE " (if now "ON" "OFF")))
+    {:status 200 :body {:recording now}}))
+
 (defroutes api-routes
   (context "/api" []
+    (GET  "/describe" [] describe-handler)
+    (GET  "/recording-mode" [] recording-mode-handler)
+    (POST "/recording-mode/toggle" [] toggle-recording-mode-handler)
+
     (context "/auth" []
       (GET  "/required" [] user-handler/password-required-handler)
       (GET  "/me"       [] user-handler/me-handler)
@@ -110,6 +164,9 @@
   (-> app-routes
       (wrap-params)
       (wrap-json-body {:keywords? true})
+      ;; Threaded before wrap-auth so it runs *after* it: the token is already
+      ;; verified, and the body is still an unread stream for the drop log.
+      (recording-mode/wrap-machine-write-guard)
       (wrap-auth prod?)
       (wrap-json-response)
       (wrap-cors :access-control-allow-origin [#".*"]
