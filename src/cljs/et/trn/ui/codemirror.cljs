@@ -6,7 +6,7 @@
   with ⌥ for word/line steps, ⌃ for line ends, and +⇧ to select. See key-commands
   for the full map. ⌘9 saves (wired at the view level, not here)."
   (:require ["@codemirror/state" :refer [EditorState]]
-            ["@codemirror/view" :refer [EditorView]]
+            ["@codemirror/view" :refer [EditorView placeholder]]
             ["@codemirror/commands" :as commands]))
 
 (def key-commands
@@ -180,7 +180,7 @@
       (.-ctrlKey e) (conj :ctrl)
       (.-shiftKey e) (conj :shift))))
 
-(defn create-editor [element {:keys [doc on-change]}]
+(defn create-editor [element {:keys [doc on-change placeholder-text]}]
   (let [doc (or doc "")
         minimal-theme
           (.theme EditorView
@@ -204,13 +204,15 @@
                        ".cm-gutters" #js {:display "none"}
                        ".cm-activeLine" #js {:backgroundColor "transparent"}
                        ".cm-activeLineGutter" #js {:display "none"}
-                       ".cm-cursor" #js {:borderLeftColor "var(--text-primary)"}})
+                       ".cm-cursor" #js {:borderLeftColor "var(--text-primary)"}
+                       ".cm-placeholder" #js {:color "var(--text-secondary)"}})
         line-wrapping (.-lineWrapping EditorView)
         update-listener (.of (.-updateListener EditorView) (fn [^js update]
                                                             (when (.-docChanged update)
                                                               (when on-change
                                                                 (on-change (.. update -state -doc toString))))))
-        extensions #js [minimal-theme line-wrapping update-listener]
+        extensions (cond-> #js [minimal-theme line-wrapping update-listener]
+                     (seq placeholder-text) (doto (.push (placeholder placeholder-text))))
         state (.create EditorState #js {:doc doc :extensions extensions})
         view (new EditorView #js {:state state :parent element})]
     (.addEventListener

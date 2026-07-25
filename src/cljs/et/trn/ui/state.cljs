@@ -13,6 +13,7 @@
            :selected-training nil
            :sessions []
            :all-sessions []      ;; overview feed: every session + :training_name
+           :editing-training nil ;; the training the edit modal is open for
            :search ""}))
 
 ;; ---------------------------------------------------------------------------
@@ -104,6 +105,12 @@
   (api/put-json (str "/api/trainings/" id) fields (auth-headers)
     (fn [_] (fetch-trainings) (when on-success (on-success)))
     (err-handler "Could not update training")))
+
+(defn open-edit-training [training]
+  (swap! *app-state assoc :editing-training training))
+
+(defn close-edit-training []
+  (swap! *app-state assoc :editing-training nil))
 
 (defn delete-training [id]
   (api/delete-simple (str "/api/trainings/" id) (auth-headers)

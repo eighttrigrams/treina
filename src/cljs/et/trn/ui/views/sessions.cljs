@@ -25,28 +25,36 @@
       :component-will-unmount #(.removeEventListener js/document "keydown" handler)
       :reagent-render (fn [_] nil)})))
 
-(defn- add-session-form []
+(defn- add-session-form
+  "The editor is always open so a new session can be typed straight away. ⌘9 is
+  scoped to this block (not the document) so it can't collide with the save
+  chord of a session being edited further down the page."
+  []
   (let [date (r/atom (state/today-str))
         notes (r/atom "")
-        open? (r/atom false)]
+        ;; Bumped after every add: the editor seeds its doc at mount, so a fresh
+        ;; key is what empties it again.
+        generation (r/atom 0)]
     (fn []
       (let [submit (fn []
                      (when (seq @date)
                        (state/add-session @date @notes
-                                          (fn [] (reset! notes "") (reset! open? false)))))]
-        [:div.note-add
+                                          (fn [] (reset! notes "") (swap! generation inc)))))]
+        [:div.note-add {:on-key-down #(when (save-key? %) (.preventDefault %) (submit))}
          [:div.note-add-head
           [:input {:type "date"
                    :value @date
                    :on-change #(reset! date (-> % .-target .-value))}]
           [:button {:on-click submit} "Add session"]
           [:span.key-hint "⌘9"]]
-         (if @open?
-           [:<>
-            [on-save-key submit]
-            [cm-textarea {:value notes :on-change #(reset! notes %) :class "cm-host cm-host-add"}]]
-           [:button.note-placeholder {:on-click #(reset! open? true)}
-            "✎ notes — markdown supported"])]))))
+         ^{:key @generation}
+         [cm-textarea {:value notes
+                       :on-change #(reset! notes %)
+                       :placeholder "Training notes"
+                       ;; No focus grab when the page opens, but back into the
+                       ;; editor after an add.
+                       :focus? (pos? @generation)
+                       :class "cm-host cm-host-add"}]]))))
 
 (defn- session-note [session]
   (let [editing? (r/atom false)

@@ -24,45 +24,50 @@
                   :on-key-down #(when (= (.-key %) "Enter") (submit))}]
          [:button {:on-click submit} "Add"]]))))
 
-(defn- training-edit [training on-done]
-  (let [name (r/atom (:name training))
-        desc (r/atom (or (:description training) ""))]
+(defn- inline-title-edit
+  "Tracker's inline rename: commits on Enter or blur, Escape drops it."
+  [training on-done]
+  (let [value (r/atom (:name training))]
     (fn [training _]
-      (let [save (fn []
-                   (when (seq (str/trim @name))
-                     (state/update-training
-                      (:id training)
-                      {:name (str/trim @name) :description @desc
-                       :modified_at (:modified_at training)}
-                      on-done)))]
-        [:div.card-edit
-         [:input {:type "text" :auto-complete "off" :value @name
-                  :on-change #(reset! name (-> % .-target .-value))
-                  :on-key-down #(case (.-key %)
-                                  "Enter" (save)
-                                  "Escape" (on-done)
-                                  nil)}]
-         [:input {:type "text" :auto-complete "off" :placeholder "Description" :value @desc
-                  :on-change #(reset! desc (-> % .-target .-value))
-                  :on-key-down #(case (.-key %)
-                                  "Enter" (save)
-                                  "Escape" (on-done)
-                                  nil)}]
-         [:div.card-edit-buttons
-          [:button {:on-click save :disabled (str/blank? @name)} "Save"]
-          [:button.secondary {:on-click on-done} "Cancel"]]]))))
+      (let [commit (fn []
+                     (let [v (str/trim @value)]
+                       (if (and (seq v) (not= v (:name training)))
+                         (state/update-training (:id training)
+                                                {:name v
+                                                 :modified_at (:modified_at training)}
+                                                on-done)
+                         (on-done))))]
+        [:input.inline-title-edit
+         {:type "text" :auto-complete "off" :auto-focus true :value @value
+          :on-click #(.stopPropagation %)
+          :on-change #(reset! value (-> % .-target .-value))
+          :on-key-down (fn [e]
+                         (case (.-key e)
+                           "Enter" (do (.stopPropagation e) (commit))
+                           "Escape" (do (.stopPropagation e) (on-done))
+                           nil))
+          :on-blur (fn [_] (commit))}]))))
 
 (defn- training-card
   "Card behaves like tracker's: the header toggles open/closed, a closed card
-  carries the jump-to-sessions icon, and description editing plus delete live
-  inside the opened card."
+  carries the jump-to-sessions icon, ⌥-clicking the title renames it in place,
+  and the description (or the pencil, when empty) opens the edit modal. Delete
+  lives in the opened card's footer."
   [_training]
   (let [expanded? (r/atom false)
-        editing? (r/atom false)]
+        renaming? (r/atom false)]
     (fn [training]
       [:div.card {:class (when @expanded? "expanded")}
-       [:div.card-header {:on-click #(when-not @editing? (swap! expanded? not))}
-        [:span.card-title (:name training)]
+       [:div.card-header {:on-click #(swap! expanded? not)}
+        (if @renaming?
+          [inline-title-edit training #(reset! renaming? false)]
+          [:span.card-title
+           {:title "⌥-click to rename"
+            :on-click (fn [e]
+                        (when (.-altKey e)
+                          (.stopPropagation e)
+                          (reset! renaming? true)))}
+           (:name training)])
         (when-not @expanded?
           [:button.icon-btn.jump-btn
            {:title "Sessions"
@@ -71,18 +76,16 @@
                         (state/open-training training))}
            "▸"])]
        (when @expanded?
-         (if @editing?
-           [training-edit training #(reset! editing? false)]
-           [:div.card-details
-            (if (seq (:description training))
-              [:p.desc {:on-click #(reset! editing? true)} (:description training)]
-              [:button.edit-icon {:on-click #(reset! editing? true)} "✎"])
-            [:div.card-footer
-             [:button.danger
-              {:on-click #(when (js/confirm (str "Delete training \"" (:name training)
-                                                 "\"? Its sessions are removed too."))
-                            (state/delete-training (:id training)))}
-              "Delete"]]]))])))
+         [:div.card-details
+          (if (seq (:description training))
+            [:p.desc {:on-click #(state/open-edit-training training)} (:description training)]
+            [:button.edit-icon {:on-click #(state/open-edit-training training)} "✎"])
+          [:div.card-footer
+           [:button.danger
+            {:on-click #(when (js/confirm (str "Delete training \"" (:name training)
+                                               "\"? Its sessions are removed too."))
+                          (state/delete-training (:id training)))}
+            "Delete"]]])])))
 
 (defn trainings-tab []
   (let [{:keys [trainings search]} @state/*app-state]

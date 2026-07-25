@@ -2,6 +2,7 @@
   (:require [reagent.dom.client :as rdomc]
             [reagent.core :as r]
             [et.trn.ui.state :as state]
+            [et.trn.ui.modals :as modals]
             [et.trn.ui.views.trainings :as trainings]
             [et.trn.ui.views.sessions :as sessions]
             [et.trn.ui.views.overview :as overview]))
@@ -58,7 +59,8 @@
         (case view
           :training [sessions/sessions-tab]
           :overview [overview/overview-tab]
-          [trainings/trainings-tab])]])))
+          [trainings/trainings-tab])]
+       [modals/modals]])))
 
 (defonce root (rdomc/create-root (.getElementById js/document "app")))
 

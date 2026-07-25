@@ -6,7 +6,10 @@
   (:require [reagent.core :as r]
             [et.trn.ui.codemirror :as cm]))
 
-(defn cm-textarea [{:keys [value on-change]}]
+(defn cm-textarea
+  "`focus?` false keeps the editor from grabbing focus at mount; `placeholder`
+  shows while the doc is empty."
+  [{:keys [value on-change focus? placeholder]}]
   (let [editor-view (atom nil)
         container-el (atom nil)]
     (r/create-class
@@ -16,11 +19,12 @@
       (fn [_]
         (when-let [el @container-el]
           (let [view (cm/create-editor el {:doc (or @value "")
+                                           :placeholder-text placeholder
                                            :on-change (fn [text]
                                                         (when on-change
                                                           (on-change text)))})]
             (reset! editor-view view)
-            (.focus view))))
+            (when (not (false? focus?)) (.focus view)))))
 
       :component-will-unmount
       (fn [_]

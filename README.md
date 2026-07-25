@@ -5,7 +5,10 @@ training to log its **Sessions** (date, notes, markdown).
 
 Two views:
 
-- **Trainings** — the list; open one to read and edit its sessions.
+- **Trainings** — the list, most recently trained first. A card's header opens
+  and closes it, the `▸` icon on a closed card jumps to its sessions, ⌥-clicking
+  the title renames it in place, and the description (or the pencil, when there
+  is none) opens the edit modal. Delete sits in the open card's footer.
 - **All sessions** — read-only feed of every session, newest first, plus a
   calendar that highlights the days you trained (hovering a day names the
   training).
