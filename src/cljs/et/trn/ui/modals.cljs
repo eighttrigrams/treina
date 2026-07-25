@@ -4,7 +4,8 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [et.trn.ui.state :as state]
-            [et.trn.ui.components.cm-textarea :refer [cm-textarea]]))
+            [et.trn.ui.components.cm-textarea :refer [cm-textarea]]
+            [et.trn.ui.components.diff :refer [diff-browser]]))
 
 (defn modal-keys
   "Shortcuts for an open modal: ⌘9 confirms, Escape closes. Listens on the
@@ -60,6 +61,46 @@
            [:button.cancel {:on-click cancel!} "Cancel"]
            [:button.confirm {:on-click save! :disabled (not valid?)} "Save"]]]]))))
 
+(defn- program-modal
+  "Two views of the program: the editor, and the history as diffs between
+  consecutive versions. Saving from here creates the next version."
+  [initial-text]
+  (let [text (r/atom (or initial-text ""))]
+    (fn [_initial-text]
+      (let [mode (:program-modal @state/*app-state)
+            versions (:program-versions @state/*app-state)
+            cancel! state/close-program-modal
+            save! #(state/save-program @text state/close-program-modal)]
+        [:div.modal-overlay {:on-click cancel!}
+         [modal-keys {:on-confirm save! :on-cancel cancel! :enabled? (= :edit mode)}]
+         [:div.modal.program-modal {:on-click #(.stopPropagation %)}
+          [:div.modal-header
+           [:span "Program"]
+           [:div.modal-tabs
+            [:button.tab {:class (when (= :edit mode) "active")
+                          :on-click #(state/open-program-modal :edit)} "Edit"]
+            [:button.tab {:class (when (= :history mode) "active")
+                          :on-click #(state/open-program-modal :history)} "History"]]]
+          [:div.modal-body
+           (if (= :history mode)
+             [diff-browser versions]
+             [cm-textarea {:value text
+                           :on-change #(reset! text %)
+                           :placeholder "Your training philosophy"
+                           :class "cm-host cm-host-program"}])]
+          [:div.modal-footer
+           (when (= :edit mode) [:span.key-hint "⌘9 save · esc close"])
+           [:button.cancel {:on-click cancel!} (if (= :history mode) "Close" "Cancel")]
+           (when (= :edit mode)
+             [:button.confirm {:on-click save!} "Save"])]]]))))
+
 (defn modals []
-  (when-let [training (:editing-training @state/*app-state)]
-    ^{:key (:id training)} [edit-training-modal training]))
+  (let [{:keys [editing-training program]} @state/*app-state
+        mode (:program-modal @state/*app-state)]
+    [:<>
+     (when editing-training
+       ^{:key (:id editing-training)} [edit-training-modal editing-training])
+     ;; Keyed on modified_at so a save re-seeds the editor from what the server
+     ;; stored, and re-opening never shows a stale draft.
+     (when mode
+       ^{:key (:modified_at program)} [program-modal (:text program)])]))

@@ -5,6 +5,7 @@
             [et.trn.server.user-handler :as user-handler]
             [et.trn.server.training-handler :as training-handler]
             [et.trn.server.session-handler :as session-handler]
+            [et.trn.server.program-handler :as program-handler]
             [et.trn.auth :as auth]
             [et.trn.server.recording-mode :as recording-mode]
             [et.trn.middleware.rate-limit :as rate-limit :refer [wrap-rate-limit]]
@@ -64,7 +65,8 @@
   '[et.trn.server
     et.trn.server.user-handler
     et.trn.server.training-handler
-    et.trn.server.session-handler])
+    et.trn.server.session-handler
+    et.trn.server.program-handler])
 
 (def ^:private route-doc-re
   "Route handlers document themselves as `METHOD /path — explanation`. Matching
@@ -130,6 +132,11 @@
       (GET    "/"    [] session-handler/list-all-sessions-handler)
       (PUT    "/:id" [] session-handler/update-session-handler)
       (DELETE "/:id" [] session-handler/delete-session-handler))
+
+    (context "/program" []
+      (GET "/"        [] program-handler/get-program-handler)
+      (PUT "/"        [] program-handler/update-program-handler)
+      (GET "/history" [] program-handler/program-history-handler))
 
     (context "/test" []
       (POST "/reset" [] reset-test-db-handler))))

@@ -12,6 +12,10 @@ Two views:
 - **All sessions** — read-only feed of every session, newest first, plus a
   calendar that highlights the days you trained (hovering a day names the
   training).
+- **Program** — one text document holding the training philosophy, rendered as a
+  page. Click it to edit in the modal; every save keeps the previous state as a
+  version, and the modal's *History* view steps through the changes as diffs.
+  So what the program said at any point in time stays recoverable.
 
 Notes are edited in a CodeMirror editor using an **IJKL** keyboard scheme
 (⌘I/K/J/L to move, ⌥ for word/line steps, ⌃ for line ends, +⇧ to select) with
@@ -92,3 +96,13 @@ Over the limit returns a bare `429`.
 
 Entities live in parallel `db/<entity>.clj` + `server/<entity>_handler.clj`
 pairs — copy that pair to add a new one.
+
+### Program history
+
+`program` holds the current text, `program_history` the superseded ones keyed
+`(program_id, version)`. A save archives the outgoing text first, so versions
+only ever grow and never change afterwards. `GET /api/program/history` returns
+them newest-first with the current text as the newest entry (`current: true`).
+The diff viewer (`ui/components/diff.cljs`) compares consecutive entries with
+CodeMirror's merge extension, unified or split. The model and the viewer follow
+`rhizome`'s.

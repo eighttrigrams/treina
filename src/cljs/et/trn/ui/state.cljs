@@ -14,6 +14,9 @@
            :sessions []
            :all-sessions []      ;; overview feed: every session + :training_name
            :editing-training nil ;; the training the edit modal is open for
+           :program nil          ;; {:id :text :modified_at}
+           :program-versions []  ;; history, newest first (newest = current)
+           :program-modal nil    ;; nil | :edit | :history
            :search ""}))
 
 ;; ---------------------------------------------------------------------------
@@ -144,6 +147,37 @@
 (defn show-trainings []
   (swap! *app-state assoc :view :trainings :selected-training nil)
   (fetch-trainings))
+
+;; ---------------------------------------------------------------------------
+;; program — one text document, every save kept as a version
+
+(defn fetch-program []
+  (api/fetch-json "/api/program" (auth-headers)
+    (fn [program] (swap! *app-state assoc :program program))))
+
+(defn fetch-program-versions []
+  (api/fetch-json "/api/program/history" (auth-headers)
+    (fn [{:keys [versions]}] (swap! *app-state assoc :program-versions (vec versions)))))
+
+(defn show-program []
+  (swap! *app-state assoc :view :program :selected-training nil)
+  (fetch-program))
+
+(defn save-program [text on-success]
+  (api/put-json "/api/program"
+                {:text text :modified_at (get-in @*app-state [:program :modified_at])}
+                (auth-headers)
+    (fn [program]
+      (swap! *app-state assoc :program program)
+      (when on-success (on-success)))
+    (err-handler "Could not save the program")))
+
+(defn open-program-modal [mode]
+  (swap! *app-state assoc :program-modal mode)
+  (when (= :history mode) (fetch-program-versions)))
+
+(defn close-program-modal []
+  (swap! *app-state assoc :program-modal nil))
 
 (defn fetch-sessions [training-id]
   (api/fetch-json (str "/api/trainings/" training-id "/sessions") (auth-headers)

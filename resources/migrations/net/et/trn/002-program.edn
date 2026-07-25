@@ -1,0 +1,18 @@
+{:up ["CREATE TABLE program (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         text TEXT NOT NULL DEFAULT '',
+         created_at DATETIME DEFAULT (datetime('now')),
+         modified_at DATETIME DEFAULT (datetime('now')),
+         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+       )"
+      "CREATE UNIQUE INDEX idx_program_user ON program (ifnull(user_id, -1))"
+      "CREATE TABLE program_history (
+         program_id INTEGER NOT NULL REFERENCES program(id) ON DELETE CASCADE,
+         version INTEGER NOT NULL,
+         text TEXT,
+         created_at DATETIME DEFAULT (datetime('now')),
+         PRIMARY KEY (program_id, version)
+       )"]
+ :down ["DROP TABLE IF EXISTS program_history"
+        "DROP INDEX IF EXISTS idx_program_user"
+        "DROP TABLE IF EXISTS program"]}

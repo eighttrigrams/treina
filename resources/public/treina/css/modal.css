@@ -30,7 +30,11 @@
   font-weight: 600;
   font-size: 1.1em;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
+.modal-tabs { display: flex; gap: 4px; margin-left: auto; }
 .modal-body { padding: 20px; }
 .modal-footer {
   padding: 16px 20px;
@@ -58,3 +62,32 @@
 }
 .edit-modal .item-edit-form input { width: 100%; box-sizing: border-box; }
 .cm-host-modal { height: 200px; }
+
+/* ---- program modal: roomier, it holds a whole document ---- */
+.program-modal { max-width: 900px; }
+.cm-host-program { height: 60vh; }
+
+.diff-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.diff-label {
+  font-size: 0.82em;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.diff-mode { margin-left: auto; padding: 6px 12px; font-size: 0.82em; }
+.diff-view {
+  height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--glass-bg);
+}
+/* The merge extension's own change highlighting, toned to the lila theme. */
+.diff-view .cm-deletedChunk { background: rgba(255, 59, 48, 0.10); }
+.diff-view .cm-changedLine { background: rgba(124, 58, 237, 0.10); }
+.diff-view .cm-changedText { background: rgba(124, 58, 237, 0.22); }
+.diff-view .cm-merge-revert { display: none; }
