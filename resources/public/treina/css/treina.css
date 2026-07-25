@@ -102,6 +102,19 @@ textarea.note-editor:focus {
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
 }
 
+/* CodeMirror host — the editor styles itself (see et.trn.ui.codemirror), it just
+   needs a height to occupy. */
+.cm-host { height: 220px; }
+.cm-host-add { height: 120px; }
+.cm-host .cm-editor { height: 100%; }
+
+.key-hint {
+  color: var(--muted-text);
+  font-size: 0.78em;
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .note-add { margin-bottom: 20px; }
 .note-add-head { display: flex; gap: 8px; margin-bottom: 8px; }
 

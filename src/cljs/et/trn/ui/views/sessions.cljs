@@ -1,34 +1,52 @@
 (ns et.trn.ui.views.sessions
   (:require [reagent.core :as r]
             [et.trn.ui.state :as state]
+            [et.trn.ui.components.cm-textarea :refer [cm-textarea]]
             ["marked" :refer [marked]]))
 
 (defn markdown [text]
   [:div.markdown-content
    {:dangerouslySetInnerHTML (r/unsafe-html (marked (or text "")))}])
 
-(defn- submit-key? [e]
-  (and (= (.-key e) "Enter") (or (.-metaKey e) (.-ctrlKey e))))
+(defn- save-key?
+  "⌘9 — the scheme's save chord (see et.trn.ui.codemirror). Enter stays a plain
+  newline inside the editor."
+  [e]
+  (and (.-metaKey e) (= "Digit9" (.-code e))))
+
+(defn- on-save-key
+  "Document-level listener, since the keystroke may land inside CodeMirror rather
+  than on our own element."
+  [save]
+  (let [handler (fn [e] (when (save-key? e) (.preventDefault e) (save)))]
+    (r/create-class
+     {:display-name "save-key"
+      :component-did-mount #(.addEventListener js/document "keydown" handler)
+      :component-will-unmount #(.removeEventListener js/document "keydown" handler)
+      :reagent-render (fn [_] nil)})))
 
 (defn- add-session-form []
   (let [date (r/atom (state/today-str))
-        notes (r/atom "")]
+        notes (r/atom "")
+        open? (r/atom false)]
     (fn []
       (let [submit (fn []
                      (when (seq @date)
-                       (state/add-session @date @notes (fn [] (reset! notes "")))))]
+                       (state/add-session @date @notes
+                                          (fn [] (reset! notes "") (reset! open? false)))))]
         [:div.note-add
          [:div.note-add-head
           [:input {:type "date"
                    :value @date
                    :on-change #(reset! date (-> % .-target .-value))}]
-          [:button {:on-click submit} "Add session"]]
-         [:textarea.note-editor
-          {:placeholder "Notes — markdown supported (⌘↵ to add)"
-           :rows 3
-           :value @notes
-           :on-change #(reset! notes (-> % .-target .-value))
-           :on-key-down #(when (submit-key? %) (submit))}]]))))
+          [:button {:on-click submit} "Add session"]
+          [:span.key-hint "⌘9"]]
+         (if @open?
+           [:<>
+            [on-save-key submit]
+            [cm-textarea {:value notes :on-change #(reset! notes %) :class "cm-host cm-host-add"}]]
+           [:button.note-placeholder {:on-click #(reset! open? true)}
+            "✎ notes — markdown supported"])]))))
 
 (defn- session-note [session]
   (let [editing? (r/atom false)
@@ -45,19 +63,16 @@
                      {:date @date :notes @notes :modified_at (:modified_at session)}
                      (fn [] (reset! editing? false)))]
           [:div.note.editing
+           [on-save-key save]
            [:div.note-head
             [:input {:type "date"
                      :value @date
                      :on-change #(reset! date (-> % .-target .-value))}]
             [:div.note-actions
+             [:span.key-hint "⌘9"]
              [:button {:on-click save} "Save"]
              [:button.secondary {:on-click #(reset! editing? false)} "Cancel"]]]
-           [:textarea.note-editor
-            {:auto-focus true
-             :rows 8
-             :value @notes
-             :on-change #(reset! notes (-> % .-target .-value))
-             :on-key-down #(when (submit-key? %) (save))}]])
+           [cm-textarea {:value notes :on-change #(reset! notes %)}]])
         [:div.note
          [:div.note-head
           [:span.note-date (:date session)]
