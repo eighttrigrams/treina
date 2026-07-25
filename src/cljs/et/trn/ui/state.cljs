@@ -17,7 +17,17 @@
            :program nil          ;; {:id :text :modified_at}
            :program-versions []  ;; history, newest first (newest = current)
            :program-modal nil    ;; nil | :edit | :history
-           :search ""}))
+           :search ""
+
+           ;; youtube
+           :yt-videos []
+           :yt-channels []
+           :yt-shelf :inbox      ;; :inbox | :archive
+           :yt-config? false     ;; the channels subpage
+           :yt-flag-filter nil   ;; nil | "cool" | "supercool"
+           :yt-channel-filter nil     ;; channel_id shown exclusively
+           :yt-excluded-channels #{}  ;; channel_ids filtered out
+           :yt-polling? false}))
 
 ;; ---------------------------------------------------------------------------
 ;; helpers
@@ -178,6 +188,90 @@
 
 (defn close-program-modal []
   (swap! *app-state assoc :program-modal nil))
+
+;; ---------------------------------------------------------------------------
+;; youtube — channels are polled server-side; the UI only shelves and filters
+
+(defn fetch-yt-videos []
+  (let [archived? (= :archive (:yt-shelf @*app-state))]
+    (api/fetch-json (str "/api/youtube/videos" (when archived? "?archived=true"))
+                    (auth-headers)
+      (fn [videos] (swap! *app-state assoc :yt-videos (vec videos))))))
+
+(defn fetch-yt-channels []
+  (api/fetch-json "/api/youtube/channels" (auth-headers)
+    (fn [channels] (swap! *app-state assoc :yt-channels (vec channels)))))
+
+(defn show-youtube []
+  (swap! *app-state assoc :view :youtube :selected-training nil)
+  (fetch-yt-videos)
+  (fetch-yt-channels))
+
+(defn set-yt-shelf [shelf]
+  (swap! *app-state assoc :yt-shelf shelf)
+  (fetch-yt-videos))
+
+(defn show-yt-config [show?]
+  (swap! *app-state assoc :yt-config? show?)
+  (when show? (fetch-yt-channels)))
+
+(defn add-yt-channel [input on-success]
+  (api/post-json "/api/youtube/channels" {:input input} (auth-headers)
+    (fn [_] (fetch-yt-channels) (when on-success (on-success)))
+    (err-handler "Could not resolve that channel")))
+
+(defn delete-yt-channel [id]
+  (api/delete-simple (str "/api/youtube/channels/" id) (auth-headers)
+    (fn [_] (fetch-yt-channels) (fetch-yt-videos))
+    (err-handler "Could not remove the channel")))
+
+(defn poll-yt-now []
+  (swap! *app-state assoc :yt-polling? true)
+  (api/post-json "/api/youtube/poll" {} (auth-headers)
+    (fn [_]
+      (swap! *app-state assoc :yt-polling? false)
+      (fetch-yt-videos)
+      (fetch-yt-channels))
+    (fn [resp]
+      (swap! *app-state assoc :yt-polling? false)
+      (set-error (get-in resp [:response :error] "Polling failed")))))
+
+(defn- update-yt-video [video fields]
+  (api/put-json (str "/api/youtube/videos/" (:id video))
+                (assoc fields :modified_at (:modified_at video))
+                (auth-headers)
+    (fn [_] (fetch-yt-videos))
+    (err-handler "Could not update the video")))
+
+(defn set-yt-flag
+  "Cycle a flag on or off: setting the flag it already has clears it."
+  [video flag]
+  (update-yt-video video {:flag (when (not= flag (:flag video)) flag)}))
+
+(defn set-yt-archived [video archived?]
+  (update-yt-video video {:archived archived?}))
+
+(defn set-yt-flag-filter [flag]
+  (swap! *app-state assoc :yt-flag-filter flag))
+
+(defn set-yt-channel-filter [channel-id]
+  (swap! *app-state assoc :yt-channel-filter channel-id :yt-excluded-channels #{}))
+
+(defn clear-yt-channel-filter []
+  (swap! *app-state assoc :yt-channel-filter nil))
+
+(defn toggle-yt-excluded-channel [channel-id]
+  (swap! *app-state update :yt-excluded-channels
+         (fn [excluded]
+           (if (contains? excluded channel-id)
+             (disj excluded channel-id)
+             (conj excluded channel-id)))))
+
+(defn clear-yt-excluded-channel [channel-id]
+  (swap! *app-state update :yt-excluded-channels disj channel-id))
+
+(defn clear-yt-channel-filters []
+  (swap! *app-state assoc :yt-channel-filter nil :yt-excluded-channels #{}))
 
 (defn fetch-sessions [training-id]
   (api/fetch-json (str "/api/trainings/" training-id "/sessions") (auth-headers)

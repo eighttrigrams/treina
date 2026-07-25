@@ -6,6 +6,8 @@
             [et.trn.server.training-handler :as training-handler]
             [et.trn.server.session-handler :as session-handler]
             [et.trn.server.program-handler :as program-handler]
+            [et.trn.server.youtube-handler :as youtube-handler]
+            [et.trn.youtube.poll :as youtube-poll]
             [et.trn.auth :as auth]
             [et.trn.server.recording-mode :as recording-mode]
             [et.trn.middleware.rate-limit :as rate-limit :refer [wrap-rate-limit]]
@@ -66,7 +68,8 @@
     et.trn.server.user-handler
     et.trn.server.training-handler
     et.trn.server.session-handler
-    et.trn.server.program-handler])
+    et.trn.server.program-handler
+    et.trn.server.youtube-handler])
 
 (def ^:private route-doc-re
   "Route handlers document themselves as `METHOD /path — explanation`. Matching
@@ -138,6 +141,14 @@
       (PUT "/"        [] program-handler/update-program-handler)
       (GET "/history" [] program-handler/program-history-handler))
 
+    (context "/youtube" []
+      (GET    "/channels"     [] youtube-handler/list-channels-handler)
+      (POST   "/channels"     [] youtube-handler/add-channel-handler)
+      (DELETE "/channels/:id" [] youtube-handler/delete-channel-handler)
+      (GET    "/videos"       [] youtube-handler/list-videos-handler)
+      (PUT    "/videos/:id"   [] youtube-handler/update-video-handler)
+      (POST   "/poll"         [] youtube-handler/poll-now-handler))
+
     (context "/test" []
       (POST "/reset" [] reset-test-db-handler))))
 
@@ -203,7 +214,8 @@
       (throw (ex-info "Cannot use :dangerously-skip-logins? in production mode" {})))
     (when-let [logfile (and (not prod?) (:logfile @common/*config))]
       (setup-file-logging logfile))
-    (common/ensure-ds)
+    (let [ds (common/ensure-ds)]
+      (youtube-poll/start-scheduler! ds (env-int "YOUTUBE_POLL_MINUTES" 15)))
     (app prod?)))
 
 (defn -main [& _args]
@@ -214,7 +226,7 @@
     (when (and (true? (:dangerously-skip-logins? @common/*config)) prod?)
       (throw (ex-info "Cannot use :dangerously-skip-logins? in production mode" {})))
     (tel/log! :info (str "Starting treina in " (if prod? "production" "development") " mode"))
-    (common/ensure-ds)
+    (youtube-poll/start-scheduler! (common/ensure-ds) (env-int "YOUTUBE_POLL_MINUTES" 15))
     (when-not prod?
       (when-let [nrepl-port (:nrepl-port @common/*config)]
         (nrepl/start-server :port nrepl-port)

@@ -12,6 +12,11 @@ Two views:
 - **All sessions** — read-only feed of every session, newest first, plus a
   calendar that highlights the days you trained (hovering a day names the
   training).
+- **YouTube** — videos from the channels you subscribe to, newest arrival first,
+  as cards: open one to watch it inline, flag it ★ *cool* or ★★ *supercool*,
+  archive it onto the second shelf. Clicking a channel chip filters to that
+  channel, ⇧-clicking filters it out (tracker's inbox gesture). Channels are
+  managed on the *Channels* subpage.
 - **Program** — one text document holding the training philosophy, rendered as a
   page. Click it to edit in the modal; every save keeps the previous state as a
   version, and the modal's *History* view steps through the changes as diffs.
@@ -96,6 +101,23 @@ Over the limit returns a bare `429`.
 
 Entities live in parallel `db/<entity>.clj` + `server/<entity>_handler.clj`
 pairs — copy that pair to add a new one.
+
+### YouTube polling
+
+Modelled on `rhizome`: each channel's public Atom feed
+(`/feeds/videos.xml?channel_id=…`) is read on a timer — no API key, no quota.
+That feed already carries every entry's title and publish date, so a video is
+named the moment it appears; nothing is fetched later.
+
+`et.trn.youtube.feed` does the talking (JDK HTTP client, `clojure.xml`) and
+resolves a UC… id from whatever you paste — id, channel URL, `@handle` or a
+video URL. For a channel page it reads the feed link / `externalId` rather than
+the first `"channelId"` in the payload, which is often a *recommended* channel.
+
+`et.trn.youtube.poll` runs the timer: every `YOUTUBE_POLL_MINUTES` (default 15,
+`0` disables it) it walks every channel of every user and records unseen videos.
+A failing feed is logged and skipped. `POST /api/youtube/poll` triggers a pass
+immediately.
 
 ### Program history
 

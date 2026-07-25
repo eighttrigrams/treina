@@ -136,6 +136,119 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
   transform: translateX(-50%) translateY(0);
 }
 
+/* ---- youtube ---- */
+.yt-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.yt-bar-right { display: flex; gap: 6px; margin-left: auto; }
+.yt-bar-right button { padding: 6px 12px; font-size: 0.82em; }
+
+.toggle-group {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-subtle);
+  border-radius: 999px;
+  padding: 3px;
+}
+.toggle-group button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.82em;
+}
+.toggle-group button:hover { background: var(--glass-bg-elevated); transform: none; }
+.toggle-group button.active { background: var(--accent); color: #fff; }
+.toggle-group.compact button { padding: 3px 9px; }
+
+/* Cool / supercool, tracker's star vocabulary. */
+.flag-filter button.cool.active, .flag-filter button.supercool.active,
+.flag-selector button.cool.active, .flag-selector button.supercool.active {
+  background: var(--accent);
+  color: #fff;
+}
+.flag-badge {
+  color: var(--accent);
+  margin-right: 6px;
+  font-size: 0.9em;
+}
+
+/* Active channel filters, as removable badges. */
+.filter-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.filter-item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8em;
+  padding: 3px 6px 3px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.filter-item-label.included {
+  background: rgba(124, 58, 237, 0.14);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: var(--text-primary);
+}
+.filter-item-label.excluded {
+  background: rgba(255, 59, 48, 0.10);
+  border-color: rgba(255, 59, 48, 0.25);
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.filter-item-label .remove-item {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0 3px;
+  font-size: 1em;
+  line-height: 1;
+  opacity: 0.6;
+}
+.filter-item-label .remove-item:hover { opacity: 1; background: none; transform: none; }
+.clear-filters { padding: 3px 10px; font-size: 0.78em; }
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.channel-chip {
+  font-size: 0.78em;
+  color: var(--text-secondary);
+  background: var(--surface-subtle);
+  padding: 2px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.channel-chip:hover { color: var(--accent); }
+.channel-id { font-size: 0.75em; color: var(--muted-text); font-variant-numeric: tabular-nums; }
+.card-date { font-size: 0.78em; color: var(--muted-text); font-variant-numeric: tabular-nums; }
+.card-header.static { cursor: default; }
+.card-footer.split { justify-content: space-between; align-items: center; }
+
+.video-embed {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.video-embed iframe { width: 100%; height: 100%; border: 0; }
+
 /* ---- program: one document, read like a page ---- */
 .program-page {
   background: var(--glass-bg);
@@ -198,6 +311,7 @@ input.search { width: 100%; margin-bottom: 16px; }
 .card-title { font-size: 1.05em; font-weight: 600; letter-spacing: -0.01em; }
 /* Jumps into the sessions; only on a closed card. */
 .jump-btn { font-size: 1.1em; padding: 2px 8px; }
+a.icon-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .jump-btn:hover { color: var(--accent); }
 
 .card-details { margin-top: 12px; }

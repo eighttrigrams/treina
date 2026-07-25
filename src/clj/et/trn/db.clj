@@ -80,5 +80,6 @@
   "Dev-only: wipe user data (keeps schema). Sessions cascade via FK."
   [ds]
   (let [conn (get-conn ds)]
-    (doseq [table [:sessions :trainings :program_history :program]]
+    (doseq [table [:sessions :trainings :program_history :program
+                   :youtube_videos :youtube_channels]]
       (jdbc/execute-one! conn (sql/format {:delete-from table})))))

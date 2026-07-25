@@ -6,7 +6,8 @@
             [et.trn.ui.views.trainings :as trainings]
             [et.trn.ui.views.sessions :as sessions]
             [et.trn.ui.views.overview :as overview]
-            [et.trn.ui.views.program :as program]))
+            [et.trn.ui.views.program :as program]
+            [et.trn.ui.views.youtube :as youtube]))
 
 (defn login-form []
   (let [username (r/atom "")
@@ -40,7 +41,9 @@
       [:button.tab {:class (when (= :overview view) "active")
                     :on-click state/show-overview} "All sessions"]
       [:button.tab {:class (when (= :program view) "active")
-                    :on-click state/show-program} "Program"]]
+                    :on-click state/show-program} "Program"]
+      [:button.tab {:class (when (= :youtube view) "active")
+                    :on-click state/show-youtube} "YouTube"]]
      (when (:token @state/*app-state)
        [:button.secondary {:on-click state/logout} "Sign out"])]))
 
@@ -63,6 +66,7 @@
           :training [sessions/sessions-tab]
           :overview [overview/overview-tab]
           :program [program/program-tab]
+          :youtube [youtube/youtube-tab]
           [trainings/trainings-tab])]
        [modals/modals]])))
 
