@@ -90,6 +90,7 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
   text-transform: uppercase;
 }
 .calendar-day {
+  position: relative;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -100,14 +101,40 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
   font-variant-numeric: tabular-nums;
 }
 .calendar-day.empty { visibility: hidden; }
-/* A trained day: filled with the accent. `title` names the training on hover. */
+/* A trained day: filled with the accent; hovering names the training. */
 .calendar-day.has-session {
   background: var(--accent);
   color: #fff;
   font-weight: 600;
-  cursor: help;
 }
 .calendar-day.has-session:hover { background: var(--accent-hover); }
+
+/* Tooltip naming the training(s) trained that day. */
+.calendar-tip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) translateY(3px);
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--glass-bg-elevated);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  color: var(--text-primary);
+  font-size: 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 20;
+}
+.calendar-day:hover .calendar-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 /* ---- read-only overview entries ---- */
 .note-training {

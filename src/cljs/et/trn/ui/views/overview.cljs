@@ -57,10 +57,12 @@
           (let [ds (date-str y m d)
                 names (get sessions-by-date ds)]
             ^{:key ds}
-            [:div.calendar-day
-             (cond-> {:class (when (seq names) "has-session")}
-               (seq names) (assoc :title (str/join ", " names)))
-             d])))]]))
+            [:div.calendar-day {:class (when (seq names) "has-session")}
+             d
+             ;; Own tooltip rather than `title`: the native one is slow to appear
+             ;; and can't be styled.
+             (when (seq names)
+               [:span.calendar-tip (str/join ", " names)])])))]]))
 
 ;; ---------------------------------------------------------------------------
 
