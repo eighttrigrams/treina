@@ -44,6 +44,83 @@ button.danger {
 }
 button.danger:hover { background: rgba(255, 59, 48, 0.22); }
 
+/* ---- nav ---- */
+.nav { display: flex; gap: 4px; margin-left: auto; margin-right: 12px; }
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.88em;
+}
+.tab:hover { background: var(--surface-subtle); color: var(--text-primary); transform: none; }
+.tab.active { background: var(--accent); color: #fff; }
+.tab.active:hover { background: var(--accent-hover); }
+
+/* ---- calendar ---- */
+.calendar {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  max-width: 360px;
+}
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.calendar-title { font-weight: 600; font-size: 0.95em; }
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.7em;
+  color: var(--muted-text);
+  padding-bottom: 4px;
+  text-transform: uppercase;
+}
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.calendar-day.empty { visibility: hidden; }
+/* A trained day: filled with the accent. `title` names the training on hover. */
+.calendar-day.has-session {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: help;
+}
+.calendar-day.has-session:hover { background: var(--accent-hover); }
+
+/* ---- read-only overview entries ---- */
+.note-training {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  background: var(--surface-subtle);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.note.readonly .note-head { align-items: center; }
+.note-body.readonly { cursor: default; }
+
 /* ---- page head ---- */
 .page-head { margin-bottom: 16px; }
 .tagline { margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.95em; }

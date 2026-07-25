@@ -1,7 +1,18 @@
 # Treina
 
 A small training log. Add named **Trainings** (id, name, description); step into a
-training to log its **Sessions** (date, notes).
+training to log its **Sessions** (date, notes, markdown).
+
+Two views:
+
+- **Trainings** — the list; open one to read and edit its sessions.
+- **All sessions** — read-only feed of every session, newest first, plus a
+  calendar that highlights the days you trained (hovering a day names the
+  training).
+
+Notes are edited in a CodeMirror editor using an **IJKL** keyboard scheme
+(⌘I/K/J/L to move, ⌥ for word/line steps, ⌃ for line ends, +⇧ to select) with
+**⌘9 to save**.
 
 Derived from `tracker` and hosted through the `plurama` umbrella at
 `treina.eighttrigrams.net`. Namespace prefix `et.trn`.

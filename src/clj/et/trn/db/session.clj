@@ -33,6 +33,20 @@
                  :order-by [[:date :desc] [:id :desc]]})
     db/jdbc-opts))
 
+(defn list-all-sessions
+  "Every session the user owns, across all trainings, newest date first and
+  decorated with the parent training's name (the overview feed needs the name,
+  not just the id)."
+  [ds user-id]
+  (jdbc/execute! (db/get-conn ds)
+    (sql/format {:select [:s.id :s.training_id :s.date :s.notes :s.created_at :s.modified_at
+                          [:t.name :training_name]]
+                 :from [[:sessions :s]]
+                 :join [[:trainings :t] [:= :t.id :s.training_id]]
+                 :where (if user-id [:= :s.user_id user-id] [:is :s.user_id nil])
+                 :order-by [[:s.date :desc] [:s.id :desc]]})
+    db/jdbc-opts))
+
 (defn session-owned-by-user? [ds session-id user-id]
   (some? (jdbc/execute-one! (db/get-conn ds)
            (sql/format {:select [:id]

@@ -3,7 +3,8 @@
             [reagent.core :as r]
             [et.trn.ui.state :as state]
             [et.trn.ui.views.trainings :as trainings]
-            [et.trn.ui.views.sessions :as sessions]))
+            [et.trn.ui.views.sessions :as sessions]
+            [et.trn.ui.views.overview :as overview]))
 
 (defn login-form []
   (let [username (r/atom "")
@@ -26,12 +27,18 @@
          [:button {:on-click do-login} "Sign in"]]))))
 
 (defn- top-bar []
-  [:div.top-bar
-   [:div.brand
-    [:span.brand-mark "◈"]
-    [:span.brand-name "Treina"]]
-   (when (:token @state/*app-state)
-     [:button.secondary {:on-click state/logout} "Sign out"])])
+  (let [view (:view @state/*app-state)]
+    [:div.top-bar
+     [:div.brand
+      [:span.brand-mark "◈"]
+      [:span.brand-name "Treina"]]
+     [:div.nav
+      [:button.tab {:class (when (contains? #{:trainings :training} view) "active")
+                    :on-click state/show-trainings} "Trainings"]
+      [:button.tab {:class (when (= :overview view) "active")
+                    :on-click state/show-overview} "All sessions"]]
+     (when (:token @state/*app-state)
+       [:button.secondary {:on-click state/logout} "Sign out"])]))
 
 (defn app []
   (let [{:keys [auth-required? logged-in? view error]} @state/*app-state]
@@ -50,6 +57,7 @@
        [:div.main-layout
         (case view
           :training [sessions/sessions-tab]
+          :overview [overview/overview-tab]
           [trainings/trainings-tab])]])))
 
 (defonce root (rdomc/create-root (.getElementById js/document "app")))

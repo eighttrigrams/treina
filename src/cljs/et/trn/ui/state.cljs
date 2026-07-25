@@ -8,10 +8,11 @@
            :token nil
            :current-user nil
            :error nil
-           :view :trainings      ;; :trainings | :training
+           :view :trainings      ;; :trainings | :training | :overview
            :trainings []
            :selected-training nil
            :sessions []
+           :all-sessions []      ;; overview feed: every session + :training_name
            :search ""}))
 
 ;; ---------------------------------------------------------------------------
@@ -120,6 +121,21 @@
 
 (defn back-to-trainings []
   (swap! *app-state assoc :view :trainings :selected-training nil :sessions [])
+  (fetch-trainings))
+
+;; ---------------------------------------------------------------------------
+;; overview (read-only, all trainings)
+
+(defn fetch-all-sessions []
+  (api/fetch-json "/api/sessions" (auth-headers)
+    (fn [sessions] (swap! *app-state assoc :all-sessions (vec sessions)))))
+
+(defn show-overview []
+  (swap! *app-state assoc :view :overview :selected-training nil)
+  (fetch-all-sessions))
+
+(defn show-trainings []
+  (swap! *app-state assoc :view :trainings :selected-training nil)
   (fetch-trainings))
 
 (defn fetch-sessions [training-id]

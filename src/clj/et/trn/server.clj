@@ -127,6 +127,7 @@
       (POST   "/:tid/sessions" [] session-handler/add-session-handler))
 
     (context "/sessions" []
+      (GET    "/"    [] session-handler/list-all-sessions-handler)
       (PUT    "/:id" [] session-handler/update-session-handler)
       (DELETE "/:id" [] session-handler/delete-session-handler))
 

@@ -12,6 +12,13 @@
       {:status 200 :body (db.session/list-sessions (common/ensure-ds) user-id tid)}
       {:status 404 :body {:error "Training not found"}})))
 
+(defn list-all-sessions-handler
+  "GET /api/sessions — every session across all trainings, newest first, each
+  carrying its parent training's `training_name`. Feeds the read-only overview."
+  [req]
+  (let [user-id (common/get-user-id req)]
+    {:status 200 :body (db.session/list-all-sessions (common/ensure-ds) user-id)}))
+
 (defn add-session-handler
   "POST /api/trainings/:tid/sessions — add a session {:date :notes}."
   [req]
