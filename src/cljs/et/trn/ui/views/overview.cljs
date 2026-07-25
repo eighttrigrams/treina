@@ -70,7 +70,10 @@
   [:div.note.readonly
    [:div.note-head
     [:span.note-date (:date session)]
-    [:span.note-training (:training_name session)]]
+    [:span.note-training {:title "Open this training"
+                          :on-click #(state/open-training-by-id (:training_id session)
+                                                                (:training_name session))}
+     (:training_name session)]]
    (when (seq (:notes session))
      [:div.note-body.readonly
       [markdown (:notes session)]])])

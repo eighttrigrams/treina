@@ -139,6 +139,16 @@
   (swap! *app-state assoc :view :training :selected-training training :sessions [])
   (fetch-sessions (:id training)))
 
+(defn open-training-by-id
+  "Jump into a training's sessions when only its id and name are at hand (the
+  overview's chips). Renders straight away from those two, then fills in the
+  rest of the training once it arrives."
+  [id name]
+  (swap! *app-state assoc :view :training :selected-training {:id id :name name} :sessions [])
+  (fetch-sessions id)
+  (api/fetch-json (str "/api/trainings/" id) (auth-headers)
+    (fn [training] (swap! *app-state assoc :selected-training training))))
+
 (defn back-to-trainings []
   (swap! *app-state assoc :view :trainings :selected-training nil :sessions [])
   (fetch-trainings))

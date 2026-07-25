@@ -267,6 +267,7 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
 .program-foot button { padding: 6px 12px; font-size: 0.82em; }
 
 /* ---- read-only overview entries ---- */
+/* Clicking it opens that training's sessions. */
 .note-training {
   font-size: 0.8em;
   color: var(--text-secondary);
@@ -274,7 +275,9 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
   padding: 2px 9px;
   border-radius: 999px;
   white-space: nowrap;
+  cursor: pointer;
 }
+.note-training:hover { color: var(--accent); }
 .note.readonly .note-head { align-items: center; }
 .note-body.readonly { cursor: default; }
 
