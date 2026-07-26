@@ -69,7 +69,9 @@
     [:span.note-training {:title "Open this training"
                           :on-click #(state/open-training-by-id (:training_id session)
                                                                 (:training_name session))}
-     (:training_name session)]]
+     (:training_name session)]
+    (when-let [place (:place_name session)]
+      [:span.note-place place])]
    (when (seq (:notes session))
      [:div.note-body.readonly
       [markdown/render (:notes session)]])])

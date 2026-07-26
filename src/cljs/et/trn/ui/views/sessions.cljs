@@ -21,26 +21,44 @@
       :component-will-unmount #(.removeEventListener js/document "keydown" handler)
       :reagent-render (fn [_] nil)})))
 
+(defn- place-select
+  "The optional place of a session. Empty option = no place. Hidden entirely
+  while the user has no places, so the form stays as it was for anyone who
+  doesn't use them."
+  [value on-change]
+  (let [places (:places @state/*app-state)]
+    (when (seq places)
+      [:select.place-select
+       {:value (or value "")
+        :on-change #(let [v (-> % .-target .-value)]
+                      (on-change (when (seq v) (js/parseInt v))))}
+       [:option {:value ""} "— no place —"]
+       (for [p places]
+         ^{:key (:id p)} [:option {:value (:id p)} (:name p)])])))
+
 (defn- add-session-form
   "The editor is always open so a new session can be typed straight away. ⌘9 is
   scoped to this block (not the document) so it can't collide with the save
-  chord of a session being edited further down the page."
+  chord of a session being edited further down the page. The chosen place sticks
+  across adds — training usually happens in the same place twice."
   []
   (let [date (r/atom (state/today-str))
         notes (r/atom "")
+        place-id (r/atom nil)
         ;; Bumped after every add: the editor seeds its doc at mount, so a fresh
         ;; key is what empties it again.
         generation (r/atom 0)]
     (fn []
       (let [submit (fn []
                      (when (seq @date)
-                       (state/add-session @date @notes
+                       (state/add-session @date @notes @place-id
                                           (fn [] (reset! notes "") (swap! generation inc)))))]
         [:div.note-add {:on-key-down #(when (save-key? %) (.preventDefault %) (submit))}
          [:div.note-add-head
           [:input {:type "date"
                    :value @date
                    :on-change #(reset! date (-> % .-target .-value))}]
+          [place-select @place-id #(reset! place-id %)]
           [:button {:on-click submit} "Add session"]
           [:span.key-hint "⌘9"]]
          ^{:key @generation}
@@ -56,16 +74,19 @@
   (let [editing? (r/atom false)
         date (r/atom (:date session))
         notes (r/atom (:notes session))
+        place-id (r/atom (:place_id session))
         start-edit (fn [s]
                      (when-not (state/narrow-viewport?)
                        (reset! date (:date s))
                        (reset! notes (:notes s))
+                       (reset! place-id (:place_id s))
                        (reset! editing? true)))]
     (fn [session]
       (if @editing?
         (let [save #(state/update-session
                      (:id session)
-                     {:date @date :notes @notes :modified_at (:modified_at session)}
+                     {:date @date :notes @notes :place_id @place-id
+                      :modified_at (:modified_at session)}
                      (fn [] (reset! editing? false)))]
           [:div.note.editing
            [on-save-key save]
@@ -73,6 +94,7 @@
             [:input {:type "date"
                      :value @date
                      :on-change #(reset! date (-> % .-target .-value))}]
+            [place-select @place-id #(reset! place-id %)]
             [:div.note-actions
              [:span.key-hint "⌘9"]
              [:button {:on-click save} "Save"]
@@ -81,6 +103,8 @@
         [:div.note
          [:div.note-head
           [:span.note-date (:date session)]
+          (when-let [place (:place_name session)]
+            [:span.note-place place])
           [:div.note-actions
            [:button.icon-btn {:title "Edit" :on-click #(start-edit session)} "✎"]
            [:button.icon-btn.danger {:title "Delete"

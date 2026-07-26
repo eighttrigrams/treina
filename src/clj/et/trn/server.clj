@@ -5,6 +5,7 @@
             [et.trn.server.user-handler :as user-handler]
             [et.trn.server.training-handler :as training-handler]
             [et.trn.server.session-handler :as session-handler]
+            [et.trn.server.place-handler :as place-handler]
             [et.trn.server.program-handler :as program-handler]
             [et.trn.server.youtube-handler :as youtube-handler]
             [et.trn.youtube.poll :as youtube-poll]
@@ -68,6 +69,7 @@
     et.trn.server.user-handler
     et.trn.server.training-handler
     et.trn.server.session-handler
+    et.trn.server.place-handler
     et.trn.server.program-handler
     et.trn.server.youtube-handler])
 
@@ -135,6 +137,13 @@
       (GET    "/"    [] session-handler/list-all-sessions-handler)
       (PUT    "/:id" [] session-handler/update-session-handler)
       (DELETE "/:id" [] session-handler/delete-session-handler))
+
+    (context "/places" []
+      (GET    "/"    [] place-handler/list-places-handler)
+      (POST   "/"    [] place-handler/add-place-handler)
+      (GET    "/:id" [] place-handler/get-place-handler)
+      (PUT    "/:id" [] place-handler/update-place-handler)
+      (DELETE "/:id" [] place-handler/delete-place-handler))
 
     (context "/program" []
       (GET "/"        [] program-handler/get-program-handler)

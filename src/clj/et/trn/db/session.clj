@@ -1,17 +1,27 @@
 (ns et.trn.db.session
+  "Sessions: one logged training on one date. `place_id` is optional — a session
+  may name where it happened, and reads carry that place's `place_name` along."
   (:require [next.jdbc :as jdbc]
             [honey.sql :as sql]
             [taoensso.telemere :as tel]
             [et.trn.db :as db]))
 
-(def select-columns [:id :training_id :date :notes :created_at :modified_at])
+(def select-columns [:id :training_id :place_id :date :notes :created_at :modified_at])
+
+(def ^:private read-columns
+  "What a listing returns: the session's own columns plus the place's name, which
+  the cards show instead of the bare id. LEFT JOINed, since a place is optional."
+  [:s.id :s.training_id :s.place_id :s.date :s.notes :s.created_at :s.modified_at
+   [:p.name :place_name]])
 
 (defn add-session
-  ([ds user-id training-id date] (add-session ds user-id training-id date ""))
-  ([ds user-id training-id date notes]
+  ([ds user-id training-id date] (add-session ds user-id training-id date "" nil))
+  ([ds user-id training-id date notes] (add-session ds user-id training-id date notes nil))
+  ([ds user-id training-id date notes place-id]
    (let [result (jdbc/execute-one! (db/get-conn ds)
                   (sql/format {:insert-into :sessions
                                :values [{:training_id training-id
+                                         :place_id place-id
                                          :date date
                                          :notes (or notes "")
                                          :user_id user-id
@@ -25,12 +35,13 @@
   "Sessions for a single training, newest date first."
   [ds user-id training-id]
   (jdbc/execute! (db/get-conn ds)
-    (sql/format {:select select-columns
-                 :from [:sessions]
+    (sql/format {:select read-columns
+                 :from [[:sessions :s]]
+                 :left-join [[:places :p] [:= :p.id :s.place_id]]
                  :where [:and
-                         [:= :training_id training-id]
-                         (db/user-id-where-clause user-id)]
-                 :order-by [[:date :desc] [:id :desc]]})
+                         [:= :s.training_id training-id]
+                         (if user-id [:= :s.user_id user-id] [:is :s.user_id nil])]
+                 :order-by [[:s.date :desc] [:s.id :desc]]})
     db/jdbc-opts))
 
 (defn list-all-sessions
@@ -39,10 +50,10 @@
   not just the id)."
   [ds user-id]
   (jdbc/execute! (db/get-conn ds)
-    (sql/format {:select [:s.id :s.training_id :s.date :s.notes :s.created_at :s.modified_at
-                          [:t.name :training_name]]
+    (sql/format {:select (conj read-columns [:t.name :training_name])
                  :from [[:sessions :s]]
                  :join [[:trainings :t] [:= :t.id :s.training_id]]
+                 :left-join [[:places :p] [:= :p.id :s.place_id]]
                  :where (if user-id [:= :s.user_id user-id] [:is :s.user_id nil])
                  :order-by [[:s.date :desc] [:s.id :desc]]})
     db/jdbc-opts))

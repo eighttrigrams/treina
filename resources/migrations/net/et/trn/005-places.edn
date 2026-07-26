@@ -1,0 +1,15 @@
+{:up ["CREATE TABLE places (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         name TEXT NOT NULL,
+         description TEXT DEFAULT '',
+         created_at DATETIME DEFAULT (datetime('now')),
+         modified_at DATETIME DEFAULT (datetime('now')),
+         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+       )"
+      "CREATE INDEX idx_places_user ON places (user_id)"
+      "ALTER TABLE sessions ADD COLUMN place_id INTEGER REFERENCES places(id)"
+      "CREATE INDEX idx_sessions_place ON sessions (place_id)"]
+ :down ["DROP INDEX IF EXISTS idx_sessions_place"
+        "ALTER TABLE sessions DROP COLUMN place_id"
+        "DROP INDEX IF EXISTS idx_places_user"
+        "DROP TABLE IF EXISTS places"]}

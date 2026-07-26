@@ -8,10 +8,11 @@
            :token nil
            :current-user nil
            :error nil
-           :view :trainings      ;; :trainings | :training | :overview
+           :view :trainings      ;; :trainings | :training | :overview | :places
            :trainings []
            :selected-training nil
            :sessions []
+           :places []            ;; where a session can happen; optional per session
            :all-sessions []      ;; overview feed: every session + :training_name
            :editing-training nil ;; the training the edit modal is open for
            :program nil          ;; {:id :text :modified_at}
@@ -141,11 +142,12 @@
 ;; ---------------------------------------------------------------------------
 ;; navigation + sessions
 
-(declare fetch-sessions)
+(declare fetch-sessions fetch-places)
 
 (defn open-training [training]
   (swap! *app-state assoc :view :training :selected-training training :sessions [])
-  (fetch-sessions (:id training)))
+  (fetch-sessions (:id training))
+  (fetch-places))
 
 (defn open-training-by-id
   "Jump into a training's sessions when only its id and name are at hand (the
@@ -154,6 +156,7 @@
   [id name]
   (swap! *app-state assoc :view :training :selected-training {:id id :name name} :sessions [])
   (fetch-sessions id)
+  (fetch-places)
   (api/fetch-json (str "/api/trainings/" id) (auth-headers)
     (fn [training] (swap! *app-state assoc :selected-training training))))
 
@@ -175,6 +178,34 @@
 (defn show-trainings []
   (swap! *app-state assoc :view :trainings :selected-training nil)
   (fetch-trainings))
+
+;; ---------------------------------------------------------------------------
+;; places — a session may name one, or none
+
+(defn fetch-places []
+  (api/fetch-json "/api/places" (auth-headers)
+    (fn [places] (swap! *app-state assoc :places (vec places)))))
+
+(defn show-places []
+  (swap! *app-state assoc :view :places :selected-training nil)
+  (fetch-places))
+
+(defn add-place [name description on-success]
+  (api/post-json "/api/places" {:name name :description (or description "")} (auth-headers)
+    (fn [_] (fetch-places) (when on-success (on-success)))
+    (err-handler "Could not add place")))
+
+(defn update-place [place fields on-success]
+  (api/put-json (str "/api/places/" (:id place))
+                (assoc fields :modified_at (:modified_at place))
+                (auth-headers)
+    (fn [_] (fetch-places) (when on-success (on-success)))
+    (err-handler "Could not update place")))
+
+(defn delete-place [id]
+  (api/delete-simple (str "/api/places/" id) (auth-headers)
+    (fn [_] (fetch-places))
+    (err-handler "Could not delete place")))
 
 ;; ---------------------------------------------------------------------------
 ;; program — one text document, every save kept as a version
@@ -314,9 +345,9 @@
 (defn- current-training-id []
   (get-in @*app-state [:selected-training :id]))
 
-(defn add-session [date notes on-success]
+(defn add-session [date notes place-id on-success]
   (api/post-json (str "/api/trainings/" (current-training-id) "/sessions")
-                 {:date date :notes (or notes "")} (auth-headers)
+                 {:date date :notes (or notes "") :place_id place-id} (auth-headers)
     (fn [_] (fetch-sessions (current-training-id)) (when on-success (on-success)))
     (err-handler "Could not add session")))
 

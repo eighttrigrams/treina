@@ -432,6 +432,34 @@ textarea.note-editor:focus {
 }
 .note-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
+/* The place of a session — a quiet chip, and its auto margin keeps the head's
+   labels packed to the left of the actions. */
+.note-place {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  background: var(--surface-subtle);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  margin-right: auto;
+}
+.place-select {
+  padding: 9px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: var(--glass-bg);
+  font-size: 0.9em;
+  color: var(--text-primary);
+  cursor: pointer;
+  max-width: 14em;
+}
+.place-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+.place-edit { display: flex; flex-direction: column; gap: 8px; }
+
 /* Controls stay out of the way until the entry is hovered. */
 .note .note-actions { opacity: 0; transition: opacity 0.15s ease; }
 .note:hover .note-actions, .note.editing .note-actions { opacity: 1; }
