@@ -3,6 +3,10 @@
   click the header to open a card (which embeds the video), flag it cool or
   supercool, archive it onto the other shelf.
 
+  A single video can also be thrown in by URL from the inbox, without following
+  its channel: its uploader shows up on the Channels subpage with polling off,
+  which the checkbox there can switch on later.
+
   Filtering follows tracker's inbox: clicking a channel chip narrows to that
   channel, ⇧-clicking filters it out, and the active filters show as removable
   badges. Channels themselves are managed on the Channels subpage."
@@ -117,7 +121,31 @@
               (if archived? "Move to inbox" "Archive")]]])]))))
 
 ;; ---------------------------------------------------------------------------
+;; adding a single video
+
+(defn- add-video-form []
+  (let [input (r/atom "")]
+    (fn []
+      (let [submit (fn []
+                     (when (seq (str/trim @input))
+                       (state/add-yt-video (str/trim @input) #(reset! input ""))))]
+        [:div.add-form
+         [:input {:type "text"
+                  :placeholder "Throw in a single video — URL or id, no subscription"
+                  :value @input
+                  :on-change #(reset! input (-> % .-target .-value))
+                  :on-key-down #(when (= "Enter" (.-key %)) (submit))}]
+         [:button {:on-click submit} "Add"]]))))
+
+;; ---------------------------------------------------------------------------
 ;; channels subpage
+
+(defn- poll-toggle [channel]
+  [:label.poll-toggle {:title "Pick up this channel's new videos automatically"}
+   [:input {:type "checkbox"
+            :checked (= 1 (:polled channel))
+            :on-change #(state/set-yt-channel-polled channel (-> % .-target .-checked))}]
+   "Poll"])
 
 (defn- channels-subpage []
   (let [input (r/atom "")]
@@ -130,7 +158,9 @@
          [:div.page-head
           [:button.secondary.back-btn {:on-click #(state/show-yt-config false)} "← Videos"]
           [:h1 "Channels"]
-          [:p.tagline "Subscribed channels. New videos are picked up automatically."]]
+          [:p.tagline
+           "Channels added here are polled. Uploaders of thrown-in single videos "
+           "sit here unpolled until you tick them."]]
          [:div.add-form
           [:input {:type "text"
                    :placeholder "Channel id (UC…), channel URL, @handle, or a video URL"
@@ -152,7 +182,9 @@
                                                     "\"? Its videos go too."))
                                (state/delete-yt-channel (:id c)))}
                  "×"]]
-               [:div.card-meta [:span.channel-id (:channel_id c)]]])])]))))
+               [:div.card-meta
+                [poll-toggle c]
+                [:span.channel-id (:channel_id c)]]])])]))))
 
 ;; ---------------------------------------------------------------------------
 
@@ -178,10 +210,11 @@
             (if yt-polling? "Checking…" "Check now")]
            [:button.secondary {:on-click #(state/show-yt-config true)} "Channels"]]]
          [channel-filter-badges]
+         (when (= :inbox yt-shelf) [add-video-form])
          (if (empty? videos)
            [:p.empty (if (= :archive yt-shelf)
                        "Nothing archived yet."
-                       "Nothing here — add a channel, then check for videos.")]
+                       "Nothing here — throw in a video above, or add a channel and check for videos.")]
            [:div.card-list
             (for [v videos]
               ^{:key (:id v)} [video-card v])])]))))

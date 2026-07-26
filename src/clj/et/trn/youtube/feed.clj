@@ -5,16 +5,26 @@
   The feed already carries each entry's title and publish date, so a video is
   fully named the moment it appears — nothing has to be fetched later.
 
+  A single video that never came through a feed is named the same way, from the
+  public oEmbed endpoint — also key-free, and it hands us the uploader's name
+  alongside the title.
+
   HTTP goes through the JDK client rather than a new dependency."
-  (:require [clojure.string :as str]
+  (:require [cheshire.core :as json]
+            [clojure.string :as str]
             [clojure.xml :as xml]
             [taoensso.telemere :as tel])
   (:import [java.io ByteArrayInputStream]
-           [java.net URI]
+           [java.net URI URLEncoder]
            [java.net.http HttpClient HttpClient$Redirect HttpRequest HttpResponse$BodyHandlers]
+           [java.nio.charset StandardCharsets]
            [java.time Duration]))
 
 (def ^:private feed-url "https://www.youtube.com/feeds/videos.xml?channel_id=")
+
+(def ^:private oembed-url "https://www.youtube.com/oembed?format=json&url=")
+
+(def ^:private watch-url "https://www.youtube.com/watch?v=")
 
 ;; YouTube serves a stripped-down page to unknown agents, and the channel-id
 ;; lookup needs the full one.
@@ -106,3 +116,39 @@
       (re-find #"youtube\.com|youtu\.be" input)
       (channel-id-from-page (if (str/starts-with? input "http") input (str "https://" input)))
       :else nil)))
+
+;; ---------------------------------------------------------------------------
+;; single videos
+
+(def ^:private video-id-pattern "[\\w-]{11}")
+
+(def ^:private video-id-re (re-pattern video-id-pattern))
+
+(def ^:private video-url-patterns
+  "The shapes a video URL comes in — watch page, share link, embed, short."
+  (mapv #(re-pattern (str % "(" video-id-pattern ")"))
+        ["[?&]v=" "youtu\\.be/" "/embed/" "/shorts/" "/live/"]))
+
+(defn resolve-video-id
+  "The 11-character video id out of whatever is at hand — a watch URL, a youtu.be
+  share link, an /embed/, /shorts/ or /live/ URL, or the bare id. nil when the
+  input names no video."
+  [input]
+  (let [input (str/trim (or input ""))]
+    (if (re-matches video-id-re input)
+      input
+      (some (fn [re] (second (re-find re input))) video-url-patterns))))
+
+(defn fetch-video
+  "{:title <video title> :author <uploader name>} from the oEmbed endpoint, nil
+  when YouTube won't describe the video (private, deleted, or a bad id)."
+  [video-id]
+  (let [url (str oembed-url (URLEncoder/encode (str watch-url video-id) StandardCharsets/UTF_8))]
+    (when-let [body (http-get url)]
+      (try
+        (let [{:strs [title author_name]} (json/parse-string body)]
+          (when (seq title) {:title title :author author_name}))
+        (catch Exception e
+          (tel/log! {:level :warn :data {:video-id video-id}}
+                    (str "youtube oembed unparseable: " (.getMessage e)))
+          nil)))))

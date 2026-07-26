@@ -1,0 +1,2 @@
+{:up ["ALTER TABLE youtube_channels ADD COLUMN polled INTEGER NOT NULL DEFAULT 1"]
+ :down ["ALTER TABLE youtube_channels DROP COLUMN polled"]}

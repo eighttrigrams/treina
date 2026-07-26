@@ -241,6 +241,19 @@
     (fn [_] (fetch-yt-channels) (when on-success (on-success)))
     (err-handler "Could not resolve that channel")))
 
+(defn add-yt-video
+  "Throw in a single video. Its uploader lands as an unpolled channel, so nothing
+  else of theirs follows."
+  [input on-success]
+  (api/post-json "/api/youtube/videos" {:input input} (auth-headers)
+    (fn [_] (fetch-yt-videos) (fetch-yt-channels) (when on-success (on-success)))
+    (err-handler "Could not resolve that video")))
+
+(defn set-yt-channel-polled [channel polled?]
+  (api/put-json (str "/api/youtube/channels/" (:id channel)) {:polled polled?} (auth-headers)
+    (fn [_] (fetch-yt-channels))
+    (err-handler "Could not change polling for that channel")))
+
 (defn delete-yt-channel [id]
   (api/delete-simple (str "/api/youtube/channels/" id) (auth-headers)
     (fn [_] (fetch-yt-channels) (fetch-yt-videos))

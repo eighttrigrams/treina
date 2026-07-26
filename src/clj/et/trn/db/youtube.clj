@@ -4,7 +4,12 @@
   A video row is created the first time it shows up in a channel's feed, titled
   right away from that feed. `flag` marks it cool / supercool, `archived` moves
   it out of the inbox; nothing is ever deleted, so an archived video stays
-  findable."
+  findable.
+
+  A single video can also be thrown in on its own. Its uploader still gets a
+  channel row — videos always hang off one, and the channel chip keeps working —
+  but that row is `polled` 0, so the poller ignores it and nothing else from that
+  channel ever arrives."
   (:require [next.jdbc :as jdbc]
             [honey.sql :as sql]
             [taoensso.telemere :as tel]
@@ -15,7 +20,7 @@
 ;; ---------------------------------------------------------------------------
 ;; channels
 
-(def channel-columns [:id :channel_id :name :created_at])
+(def channel-columns [:id :channel_id :name :polled :created_at])
 
 (defn list-channels [ds user-id]
   (jdbc/execute! (db/get-conn ds)
@@ -26,11 +31,13 @@
     db/jdbc-opts))
 
 (defn list-all-channels
-  "Every channel of every user — what the poller iterates."
+  "Every polled channel of every user — what the poller iterates. Channels that
+  only exist to hold a thrown-in single video are left out."
   [ds]
   (jdbc/execute! (db/get-conn ds)
     (sql/format {:select (conj channel-columns :user_id)
                  :from [:youtube_channels]
+                 :where [:= :polled 1]
                  :order-by [[:id :asc]]})
     db/jdbc-opts))
 
@@ -41,16 +48,36 @@
                  :where [:and [:= :channel_id channel-id] (db/user-id-where-clause user-id)]})
     db/jdbc-opts))
 
+(defn set-channel-polled
+  "Turn polling for one channel on or off. Returns the updated row, nil when the
+  channel isn't the user's."
+  [ds user-id id polled?]
+  (let [result (jdbc/execute-one! (db/get-conn ds)
+                 (sql/format {:update :youtube_channels
+                              :set {:polled (if polled? 1 0)}
+                              :where [:and [:= :id id] (db/user-id-where-clause user-id)]}))]
+    (when (pos? (:next.jdbc/update-count result))
+      (jdbc/execute-one! (db/get-conn ds)
+        (sql/format {:select channel-columns :from [:youtube_channels] :where [:= :id id]})
+        db/jdbc-opts))))
+
 (defn add-channel
-  "Subscribe to `channel-id`. Returns the existing row when already subscribed."
-  [ds user-id channel-id name]
-  (or (get-channel-by-channel-id ds user-id channel-id)
-      (do (jdbc/execute-one! (db/get-conn ds)
-            (sql/format {:insert-into :youtube_channels
-                         :values [{:channel_id channel-id :name name :user_id user-id}]}))
-          (tel/log! {:level :info :data {:channel-id channel-id :user-id user-id}}
-                    "YouTube channel added")
-          (get-channel-by-channel-id ds user-id channel-id))))
+  "Add `channel-id`, polled unless told otherwise. Returns the existing row when
+  the channel is already there — and switches polling on for it, since asking for
+  a channel by name is asking to follow it."
+  ([ds user-id channel-id name] (add-channel ds user-id channel-id name true))
+  ([ds user-id channel-id name polled?]
+   (if-let [existing (get-channel-by-channel-id ds user-id channel-id)]
+     (if (and polled? (not= 1 (:polled existing)))
+       (set-channel-polled ds user-id (:id existing) true)
+       existing)
+     (do (jdbc/execute-one! (db/get-conn ds)
+           (sql/format {:insert-into :youtube_channels
+                        :values [{:channel_id channel-id :name name :user_id user-id
+                                  :polled (if polled? 1 0)}]}))
+         (tel/log! {:level :info :data {:channel-id channel-id :user-id user-id :polled polled?}}
+                   "YouTube channel added")
+         (get-channel-by-channel-id ds user-id channel-id)))))
 
 (defn set-channel-name [ds id name]
   (jdbc/execute-one! (db/get-conn ds)
@@ -104,6 +131,15 @@
                          (if user-id [:= :v.user_id user-id] [:is :v.user_id nil])]})
     db/jdbc-opts))
 
+(defn get-video-by-video-id [ds user-id video-id]
+  (jdbc/execute-one! (db/get-conn ds)
+    (sql/format {:select video-select
+                 :from [[:youtube_videos :v]]
+                 :join [[:youtube_channels :c] [:= :c.id :v.channel_pk]]
+                 :where [:and [:= :v.video_id video-id]
+                         (if user-id [:= :v.user_id user-id] [:is :v.user_id nil])]})
+    db/jdbc-opts))
+
 (defn video-known? [ds user-id video-id]
   (some? (jdbc/execute-one! (db/get-conn ds)
            (sql/format {:select [:id] :from [:youtube_videos]
@@ -112,7 +148,8 @@
            db/jdbc-opts)))
 
 (defn add-video
-  "Record a video that just appeared in a feed, with the title the feed gave us."
+  "Record a video that just appeared in a feed, with the title the feed gave us.
+  Also how a single thrown-in video lands, its channel then being an unpolled one."
   [ds user-id channel-pk {:keys [video-id title published]}]
   (jdbc/execute-one! (db/get-conn ds)
     (sql/format {:insert-into :youtube_videos
@@ -122,7 +159,8 @@
                            :published_at published
                            :user_id user-id
                            :modified_at [:raw "datetime('now')"]}]}))
-  (tel/log! {:level :info :data {:video-id video-id :channel-pk channel-pk}} "YouTube video added"))
+  (tel/log! {:level :info :data {:video-id video-id :channel-pk channel-pk}} "YouTube video added")
+  (get-video-by-video-id ds user-id video-id))
 
 (defn update-video
   "Set `flag` and/or `archived`. Returns nil when the row is gone or was changed

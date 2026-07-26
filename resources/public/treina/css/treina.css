@@ -234,6 +234,16 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
 }
 .channel-chip:hover { color: var(--accent); }
 .channel-id { font-size: 0.75em; color: var(--muted-text); font-variant-numeric: tabular-nums; }
+.poll-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.poll-toggle input { margin: 0; accent-color: var(--accent); cursor: pointer; }
 .card-date { font-size: 0.78em; color: var(--muted-text); font-variant-numeric: tabular-nums; }
 .card-header.static { cursor: default; }
 .card-footer.split { justify-content: space-between; align-items: center; }

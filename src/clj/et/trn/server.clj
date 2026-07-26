@@ -144,8 +144,10 @@
     (context "/youtube" []
       (GET    "/channels"     [] youtube-handler/list-channels-handler)
       (POST   "/channels"     [] youtube-handler/add-channel-handler)
+      (PUT    "/channels/:id" [] youtube-handler/update-channel-handler)
       (DELETE "/channels/:id" [] youtube-handler/delete-channel-handler)
       (GET    "/videos"       [] youtube-handler/list-videos-handler)
+      (POST   "/videos"       [] youtube-handler/add-video-handler)
       (PUT    "/videos/:id"   [] youtube-handler/update-video-handler)
       (POST   "/poll"         [] youtube-handler/poll-now-handler))
 
