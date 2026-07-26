@@ -8,11 +8,12 @@
            :token nil
            :current-user nil
            :error nil
-           :view :trainings      ;; :trainings | :training | :overview | :places
+           :view :trainings      ;; :trainings | :training | :overview | :places | :trainers
            :trainings []
            :selected-training nil
            :sessions []
            :places []            ;; where a session can happen; optional per session
+           :trainers []          ;; who took a session; optional per session
            :all-sessions []      ;; overview feed: every session + :training_name
            :editing-training nil ;; the training the edit modal is open for
            :program nil          ;; {:id :text :modified_at}
@@ -122,9 +123,16 @@
     (fn [_] (fetch-trainings) (when on-success (on-success)))
     (err-handler "Could not add training")))
 
-(defn update-training [id fields on-success]
+(defn update-training
+  "Saves, then keeps the open training in step — the sessions view shows the
+  description too, and editing it from there must not leave a stale copy behind."
+  [id fields on-success]
   (api/put-json (str "/api/trainings/" id) fields (auth-headers)
-    (fn [_] (fetch-trainings) (when on-success (on-success)))
+    (fn [training]
+      (fetch-trainings)
+      (when (= id (get-in @*app-state [:selected-training :id]))
+        (swap! *app-state assoc :selected-training training))
+      (when on-success (on-success)))
     (err-handler "Could not update training")))
 
 (defn open-edit-training [training]
@@ -142,12 +150,13 @@
 ;; ---------------------------------------------------------------------------
 ;; navigation + sessions
 
-(declare fetch-sessions fetch-places)
+(declare fetch-sessions fetch-places fetch-trainers)
 
 (defn open-training [training]
   (swap! *app-state assoc :view :training :selected-training training :sessions [])
   (fetch-sessions (:id training))
-  (fetch-places))
+  (fetch-places)
+  (fetch-trainers))
 
 (defn open-training-by-id
   "Jump into a training's sessions when only its id and name are at hand (the
@@ -157,6 +166,7 @@
   (swap! *app-state assoc :view :training :selected-training {:id id :name name} :sessions [])
   (fetch-sessions id)
   (fetch-places)
+  (fetch-trainers)
   (api/fetch-json (str "/api/trainings/" id) (auth-headers)
     (fn [training] (swap! *app-state assoc :selected-training training))))
 
@@ -206,6 +216,34 @@
   (api/delete-simple (str "/api/places/" id) (auth-headers)
     (fn [_] (fetch-places))
     (err-handler "Could not delete place")))
+
+;; ---------------------------------------------------------------------------
+;; trainers — as optional on a session as its place
+
+(defn fetch-trainers []
+  (api/fetch-json "/api/trainers" (auth-headers)
+    (fn [trainers] (swap! *app-state assoc :trainers (vec trainers)))))
+
+(defn show-trainers []
+  (swap! *app-state assoc :view :trainers :selected-training nil)
+  (fetch-trainers))
+
+(defn add-trainer [name description on-success]
+  (api/post-json "/api/trainers" {:name name :description (or description "")} (auth-headers)
+    (fn [_] (fetch-trainers) (when on-success (on-success)))
+    (err-handler "Could not add trainer")))
+
+(defn update-trainer [trainer fields on-success]
+  (api/put-json (str "/api/trainers/" (:id trainer))
+                (assoc fields :modified_at (:modified_at trainer))
+                (auth-headers)
+    (fn [_] (fetch-trainers) (when on-success (on-success)))
+    (err-handler "Could not update trainer")))
+
+(defn delete-trainer [id]
+  (api/delete-simple (str "/api/trainers/" id) (auth-headers)
+    (fn [_] (fetch-trainers))
+    (err-handler "Could not delete trainer")))
 
 ;; ---------------------------------------------------------------------------
 ;; program — one text document, every save kept as a version
@@ -308,6 +346,13 @@
     (fn [_] (fetch-yt-videos))
     (err-handler "Could not update the video")))
 
+(defn delete-yt-video
+  "Off both shelves for good — the poller won't bring it back."
+  [video]
+  (api/delete-simple (str "/api/youtube/videos/" (:id video)) (auth-headers)
+    (fn [_] (fetch-yt-videos))
+    (err-handler "Could not delete the video")))
+
 (defn set-yt-flag
   "Cycle a flag on or off: setting the flag it already has clears it."
   [video flag]
@@ -345,9 +390,10 @@
 (defn- current-training-id []
   (get-in @*app-state [:selected-training :id]))
 
-(defn add-session [date notes place-id on-success]
+(defn add-session [date notes place-id trainer-id on-success]
   (api/post-json (str "/api/trainings/" (current-training-id) "/sessions")
-                 {:date date :notes (or notes "") :place_id place-id} (auth-headers)
+                 {:date date :notes (or notes "")
+                  :place_id place-id :trainer_id trainer-id} (auth-headers)
     (fn [_] (fetch-sessions (current-training-id)) (when on-success (on-success)))
     (err-handler "Could not add session")))
 

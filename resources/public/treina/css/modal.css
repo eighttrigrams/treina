@@ -24,6 +24,11 @@
   min-width: 320px;
   max-width: 700px;
   width: 90vw;
+  /* Nearly the whole screen: a modal here is a writing surface, and the editor
+     inside it grows with the box rather than sitting in a small window. */
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 .modal-header {
   padding: 16px 20px;
@@ -35,7 +40,13 @@
   gap: 16px;
 }
 .modal-tabs { display: flex; gap: 4px; margin-left: auto; }
-.modal-body { padding: 20px; }
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .modal-footer {
   padding: 16px 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
@@ -59,13 +70,15 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-height: 0;
 }
 .edit-modal .item-edit-form input { width: 100%; box-sizing: border-box; }
-.cm-host-modal { height: 200px; }
+.cm-host-modal { flex: 1; min-height: 0; }
 
 /* ---- program modal: roomier, it holds a whole document ---- */
 .program-modal { max-width: 900px; }
-.cm-host-program { height: 60vh; }
+.cm-host-program { flex: 1; min-height: 0; }
 
 .diff-controls {
   display: flex;
@@ -79,8 +92,15 @@
   font-variant-numeric: tabular-nums;
 }
 .diff-mode { margin-left: auto; padding: 6px 12px; font-size: 0.82em; }
+.diff-browser {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 .diff-view {
-  height: 60vh;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--border-color);
   border-radius: 10px;

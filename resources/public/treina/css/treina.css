@@ -295,6 +295,7 @@ button.danger:hover { background: rgba(255, 59, 48, 0.22); }
 .page-head { margin-bottom: 16px; }
 .tagline { margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.95em; }
 .desc { margin: 6px 0 0 0; color: var(--text-secondary); font-size: 0.92em; }
+.desc.editable { cursor: pointer; }
 .empty { color: var(--text-secondary); font-style: italic; padding: 24px 4px; }
 
 input.search { width: 100%; margin-bottom: 16px; }
@@ -343,6 +344,7 @@ a.icon-btn { text-decoration: none; display: inline-flex; align-items: center; }
   margin-top: 14px;
 }
 .card-footer button { padding: 6px 12px; font-size: 0.82em; }
+.card-footer-actions { display: flex; gap: 8px; align-items: center; }
 
 /* ⌥-click a card title to rename it in place. */
 .inline-title-edit {
@@ -415,7 +417,8 @@ textarea.note-editor:focus {
 .note-head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  /* Labels pack to the left, the actions float off to the right (below), so a
+     head reads the same with one chip, three, or none. */
   gap: 12px;
   margin-bottom: 6px;
 }
@@ -430,18 +433,16 @@ textarea.note-editor:focus {
   color: var(--text-secondary);
   cursor: text;
 }
-.note-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.note-actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: auto; }
 
-/* The place of a session — a quiet chip, and its auto margin keeps the head's
-   labels packed to the left of the actions. */
-.note-place {
+/* The place and the trainer of a session — quiet chips beside its date. */
+.note-place, .note-trainer {
   font-size: 0.8em;
   color: var(--text-secondary);
   background: var(--surface-subtle);
   padding: 2px 9px;
   border-radius: 999px;
   white-space: nowrap;
-  margin-right: auto;
 }
 .place-select {
   padding: 9px 12px;

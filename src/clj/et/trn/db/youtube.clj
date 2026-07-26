@@ -3,8 +3,12 @@
 
   A video row is created the first time it shows up in a channel's feed, titled
   right away from that feed. `flag` marks it cool / supercool, `archived` moves
-  it out of the inbox; nothing is ever deleted, so an archived video stays
-  findable.
+  it out of the inbox, so an archived video stays findable.
+
+  Deleting a video sets `deleted` instead of dropping the row. The row is what
+  tells the poller it has seen that video, so a dropped one would simply come
+  back on the next tick — the flag makes a delete stick. Deleted videos are
+  invisible everywhere; throwing the same video in again revives its row.
 
   A single video can also be thrown in on its own. Its uploader still gets a
   channel row — videos always hang off one, and the channel chip keeps working —
@@ -103,14 +107,14 @@
 ;; videos
 
 (def ^:private video-select
-  [:v.id :v.video_id :v.title :v.published_at :v.flag :v.archived
+  [:v.id :v.video_id :v.title :v.published_at :v.flag :v.archived :v.deleted
    :v.created_at :v.modified_at :v.channel_pk
    [:c.name :channel_name] [:c.channel_id :channel_id]])
 
 (defn list-videos
   "Videos of one shelf — inbox (`archived` false) or archive — newest arrival
-  first. Flag and channel filtering happens in the UI; ordering is purely by
-  when a video came in."
+  first, deleted ones left out. Flag and channel filtering happens in the UI;
+  ordering is purely by when a video came in."
   [ds user-id archived?]
   (jdbc/execute! (db/get-conn ds)
     (sql/format {:select video-select
@@ -118,6 +122,7 @@
                  :join [[:youtube_channels :c] [:= :c.id :v.channel_pk]]
                  :where [:and
                          (if user-id [:= :v.user_id user-id] [:is :v.user_id nil])
+                         [:= :v.deleted 0]
                          [:= :v.archived (if archived? 1 0)]]
                  :order-by [[:v.created_at :desc] [:v.id :desc]]})
     db/jdbc-opts))
@@ -140,7 +145,10 @@
                          (if user-id [:= :v.user_id user-id] [:is :v.user_id nil])]})
     db/jdbc-opts))
 
-(defn video-known? [ds user-id video-id]
+(defn video-known?
+  "Whether this video has ever been recorded — deleted ones included, so the
+  poller does not bring a deleted video back."
+  [ds user-id video-id]
   (some? (jdbc/execute-one! (db/get-conn ds)
            (sql/format {:select [:id] :from [:youtube_videos]
                         :where [:and [:= :video_id video-id]
@@ -172,3 +180,25 @@
                               :where (db/update-where id user-id expected-modified-at)}))]
     (when (pos? (:next.jdbc/update-count result))
       (get-video ds user-id id))))
+
+(defn delete-video
+  "Take a video off both shelves for good. Works from the inbox or the archive."
+  [ds user-id id]
+  (let [result (jdbc/execute-one! (db/get-conn ds)
+                 (sql/format {:update :youtube_videos
+                              :set {:deleted 1 :modified_at [:raw "datetime('now')"]}
+                              :where [:and [:= :id id] [:= :deleted 0]
+                                      (db/user-id-where-clause user-id)]}))]
+    (when (pos? (:next.jdbc/update-count result))
+      (tel/log! {:level :info :data {:video-pk id :user-id user-id}} "YouTube video deleted")
+      {:success true})))
+
+(defn revive-video
+  "Undo a delete, back into the inbox — what throwing a deleted video in again
+  means."
+  [ds user-id id]
+  (jdbc/execute-one! (db/get-conn ds)
+    (sql/format {:update :youtube_videos
+                 :set {:deleted 0 :archived 0 :modified_at [:raw "datetime('now')"]}
+                 :where [:and [:= :id id] (db/user-id-where-clause user-id)]}))
+  (get-video ds user-id id))

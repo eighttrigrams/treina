@@ -1,0 +1,4 @@
+{:up ["ALTER TABLE youtube_videos ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0"
+      "CREATE INDEX idx_youtube_videos_deleted ON youtube_videos (deleted)"]
+ :down ["DROP INDEX IF EXISTS idx_youtube_videos_deleted"
+        "ALTER TABLE youtube_videos DROP COLUMN deleted"]}

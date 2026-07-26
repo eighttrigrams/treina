@@ -64,7 +64,8 @@
   URL, or the bare 11-character id. Title and uploader come from YouTube's oEmbed
   endpoint; the uploader gets an unpolled channel row so the video has a chip and
   nothing else of theirs ever arrives. 201 with the video, 200 when it is already
-  in, 400 when the input names no reachable video."
+  in (a deleted one comes back into the inbox), 400 when the input names no
+  reachable video."
   [req]
   (let [ds (common/ensure-ds)
         user-id (common/get-user-id req)
@@ -75,7 +76,10 @@
       {:status 400 :body {:error "Could not resolve a video from that input"}}
 
       (db.youtube/video-known? ds user-id video-id)
-      {:status 200 :body (db.youtube/get-video-by-video-id ds user-id video-id)}
+      (let [existing (db.youtube/get-video-by-video-id ds user-id video-id)]
+        {:status 200 :body (if (= 1 (:deleted existing))
+                             (db.youtube/revive-video ds user-id (:id existing))
+                             existing)})
 
       :else
       (if-let [{:keys [title author]} (feed/fetch-video video-id)]
@@ -109,6 +113,18 @@
         (common/conflict-or-not-found
          (db.youtube/get-video (common/ensure-ds) user-id id)
          "Video not found")))))
+
+(defn delete-video-handler
+  "DELETE /api/youtube/videos/:id — remove a video from the inbox or the archive.
+  It stays gone: the poller won't bring it back, and only throwing the same video
+  in again by URL revives it. 404 when it isn't yours or is already gone."
+  [req]
+  (let [user-id (common/get-user-id req)
+        id (common/parse-int-opt (get-in req [:params :id]))
+        result (when id (db.youtube/delete-video (common/ensure-ds) user-id id))]
+    (if (:success result)
+      {:status 200 :body result}
+      {:status 404 :body {:error "Video not found"}})))
 
 (defn poll-now-handler
   "POST /api/youtube/poll — poll every subscribed channel right now instead of

@@ -5,7 +5,8 @@
 
   A single video can also be thrown in by URL from the inbox, without following
   its channel: its uploader shows up on the Channels subpage with polling off,
-  which the checkbox there can switch on later.
+  which the checkbox there can switch on later. An opened card can also delete
+  the video outright, from either shelf.
 
   Filtering follows tracker's inbox: clicking a channel chip narrows to that
   channel, ⇧-clicking filters it out, and the active filters show as removable
@@ -117,8 +118,16 @@
             [video-embed (:video_id video)]
             [:div.card-footer.split
              [flag-selector video]
-             [:button.secondary {:on-click #(state/set-yt-archived video (not archived?))}
-              (if archived? "Move to inbox" "Archive")]]])]))))
+             [:div.card-footer-actions
+              [:button.secondary {:on-click #(state/set-yt-archived video (not archived?))}
+               (if archived? "Move to inbox" "Archive")]
+              [:button.danger
+               {:title "Remove this video for good"
+                :on-click #(when (js/confirm (str "Delete \""
+                                                  (or (:title video) (:video_id video))
+                                                  "\"? It won't come back on the next check."))
+                             (state/delete-yt-video video))}
+               "Delete"]]]])]))))
 
 ;; ---------------------------------------------------------------------------
 ;; adding a single video

@@ -1,0 +1,15 @@
+{:up ["CREATE TABLE trainers (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         name TEXT NOT NULL,
+         description TEXT DEFAULT '',
+         created_at DATETIME DEFAULT (datetime('now')),
+         modified_at DATETIME DEFAULT (datetime('now')),
+         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+       )"
+      "CREATE INDEX idx_trainers_user ON trainers (user_id)"
+      "ALTER TABLE sessions ADD COLUMN trainer_id INTEGER REFERENCES trainers(id)"
+      "CREATE INDEX idx_sessions_trainer ON sessions (trainer_id)"]
+ :down ["DROP INDEX IF EXISTS idx_sessions_trainer"
+        "ALTER TABLE sessions DROP COLUMN trainer_id"
+        "DROP INDEX IF EXISTS idx_trainers_user"
+        "DROP TABLE IF EXISTS trainers"]}

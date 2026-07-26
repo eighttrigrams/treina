@@ -71,7 +71,9 @@
                                                                 (:training_name session))}
      (:training_name session)]
     (when-let [place (:place_name session)]
-      [:span.note-place place])]
+      [:span.note-place place])
+    (when-let [trainer (:trainer_name session)]
+      [:span.note-trainer trainer])]
    (when (seq (:notes session))
      [:div.note-body.readonly
       [markdown/render (:notes session)]])])

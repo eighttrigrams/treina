@@ -7,6 +7,7 @@
             [et.trn.ui.views.sessions :as sessions]
             [et.trn.ui.views.overview :as overview]
             [et.trn.ui.views.places :as places]
+            [et.trn.ui.views.trainers :as trainers]
             [et.trn.ui.views.program :as program]
             [et.trn.ui.views.youtube :as youtube]))
 
@@ -43,6 +44,8 @@
                     :on-click state/show-overview} "All sessions"]
       [:button.tab {:class (when (= :places view) "active")
                     :on-click state/show-places} "Places"]
+      [:button.tab {:class (when (= :trainers view) "active")
+                    :on-click state/show-trainers} "Trainers"]
       [:button.tab {:class (when (= :program view) "active")
                     :on-click state/show-program} "Program"]
       [:button.tab {:class (when (= :youtube view) "active")
@@ -69,6 +72,7 @@
           :training [sessions/sessions-tab]
           :overview [overview/overview-tab]
           :places [places/places-tab]
+          :trainers [trainers/trainers-tab]
           :program [program/program-tab]
           :youtube [youtube/youtube-tab]
           [trainings/trainings-tab])]
