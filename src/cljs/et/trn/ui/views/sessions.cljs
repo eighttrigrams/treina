@@ -1,12 +1,8 @@
 (ns et.trn.ui.views.sessions
   (:require [reagent.core :as r]
+            [et.trn.ui.markdown :as markdown]
             [et.trn.ui.state :as state]
-            [et.trn.ui.components.cm-textarea :refer [cm-textarea]]
-            ["marked" :refer [marked]]))
-
-(defn markdown [text]
-  [:div.markdown-content
-   {:dangerouslySetInnerHTML (r/unsafe-html (marked (or text "")))}])
+            [et.trn.ui.components.cm-textarea :refer [cm-textarea]]))
 
 (defn- save-key?
   "⌘9 — the scheme's save chord (see et.trn.ui.codemirror). Enter stays a plain
@@ -92,7 +88,7 @@
                                                   (state/delete-session (:id session)))} "×"]]]
          (if (seq (:notes session))
            [:div.note-body {:on-click #(start-edit session)}
-            [markdown (:notes session)]]
+            [markdown/render (:notes session)]]
            [:button.note-placeholder {:on-click #(start-edit session)} "✎ add notes"])]))))
 
 (defn sessions-tab []
@@ -102,7 +98,7 @@
       [:button.secondary.back-btn {:on-click state/back-to-trainings} "← Trainings"]
       [:h1 (:name selected-training)]
       (when (seq (:description selected-training))
-        [:p.desc (:description selected-training)])]
+        [:div.desc [markdown/render (:description selected-training)]])]
      [add-session-form]
      (if (empty? sessions)
        [:p.empty "No sessions yet — log your first above."]

@@ -4,12 +4,8 @@
   view."
   (:require [reagent.core :as r]
             [clojure.string :as str]
-            [et.trn.ui.state :as state]
-            ["marked" :refer [marked]]))
-
-(defn- markdown [text]
-  [:div.markdown-content
-   {:dangerouslySetInnerHTML (r/unsafe-html (marked (or text "")))}])
+            [et.trn.ui.markdown :as markdown]
+            [et.trn.ui.state :as state]))
 
 ;; ---------------------------------------------------------------------------
 ;; date helpers (plain js/Date — no extra dependency)
@@ -76,7 +72,7 @@
      (:training_name session)]]
    (when (seq (:notes session))
      [:div.note-body.readonly
-      [markdown (:notes session)]])])
+      [markdown/render (:notes session)]])])
 
 (defn overview-tab []
   (let [today (js/Date.)

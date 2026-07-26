@@ -1,6 +1,7 @@
 (ns et.trn.ui.views.trainings
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [et.trn.ui.markdown :as markdown]
             [et.trn.ui.state :as state]))
 
 (defn- add-training-form []
@@ -78,7 +79,8 @@
        (when @expanded?
          [:div.card-details
           (if (seq (:description training))
-            [:p.desc {:on-click #(state/open-edit-training training)} (:description training)]
+            [:div.desc {:on-click #(state/open-edit-training training)}
+             [markdown/render (:description training)]]
             [:button.edit-icon {:on-click #(state/open-edit-training training)} "✎"])
           [:div.card-footer
            [:button.danger
