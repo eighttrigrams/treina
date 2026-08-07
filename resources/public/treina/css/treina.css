@@ -460,6 +460,28 @@ textarea.note-editor:focus {
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
 }
 .place-edit { display: flex; flex-direction: column; gap: 8px; }
+/* The description is markdown, so it needs room for a paragraph. Vertical resize
+   only — sideways would drag it out of the card. */
+.place-edit textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.55;
+  color: var(--text-primary);
+  resize: vertical;
+}
+.place-edit textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+.place-edit textarea::placeholder { color: var(--text-secondary); }
 
 /* Controls stay out of the way until the entry is hovered. */
 .note .note-actions { opacity: 0; transition: opacity 0.15s ease; }

@@ -33,6 +33,13 @@
                   :on-key-down #(when (= "Enter" (.-key %)) (submit))}]
          [:button {:on-click submit} "Add"]]))))
 
+(defn- save-chord?
+  "⌘/Ctrl+Enter, the description editor's save. Plain Enter has to stay a plain
+  newline there: the field renders as markdown, and a paragraph needs one."
+  [e]
+  (and (= "Enter" (.-key e))
+       (or (.-metaKey e) (.-ctrlKey e))))
+
 (defn- session-count-label [n]
   (case n
     0 "no sessions yet"
@@ -65,11 +72,15 @@
                         :value @name
                         :on-change #(reset! name (-> % .-target .-value))
                         :on-key-down #(when (= "Enter" (.-key %)) (save))}]
-               [:input {:type "text"
-                        :placeholder "Description"
-                        :value @description
-                        :on-change #(reset! description (-> % .-target .-value))
-                        :on-key-down #(when (= "Enter" (.-key %)) (save))}]
+               ;; The name above keeps Enter-saves — it is one line by nature.
+               ;; This one cannot: see save-chord?.
+               [:textarea {:placeholder "Description"
+                           :rows 5
+                           :value @description
+                           :on-change #(reset! description (-> % .-target .-value))
+                           :on-key-down #(when (save-chord? %)
+                                           (.preventDefault %)
+                                           (save))}]
                [:div.card-footer
                 [:button {:on-click save} "Save"]
                 [:button.secondary {:on-click #(reset! editing? false)} "Cancel"]]])
