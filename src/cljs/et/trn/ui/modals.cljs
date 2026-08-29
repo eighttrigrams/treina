@@ -3,6 +3,7 @@
   Escape closes. Rendered once at the app root and driven from app state."
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.state :as state]
             [et.trn.ui.components.cm-textarea :refer [cm-textarea]]
             [et.trn.ui.components.diff :refer [diff-browser]]))
@@ -15,7 +16,7 @@
         handler (fn [e]
                   (let [{:keys [on-confirm on-cancel enabled?]} @props]
                     (cond
-                      (and enabled? (.-metaKey e) (= "Digit9" (.-code e)))
+                      (and enabled? (keys/save-key? e))
                       (do (.preventDefault e) (on-confirm))
 
                       (= "Escape" (.-code e))

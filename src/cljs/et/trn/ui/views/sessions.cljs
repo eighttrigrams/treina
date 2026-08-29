@@ -3,26 +3,10 @@
   clicking that description opens the same edit modal the trainings list uses —
   then the always-open editor for a new session, then the sessions themselves."
   (:require [reagent.core :as r]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.markdown :as markdown]
             [et.trn.ui.state :as state]
             [et.trn.ui.components.cm-textarea :refer [cm-textarea]]))
-
-(defn- save-key?
-  "⌘9 — the scheme's save chord (see et.trn.ui.codemirror). Enter stays a plain
-  newline inside the editor."
-  [e]
-  (and (.-metaKey e) (= "Digit9" (.-code e))))
-
-(defn- on-save-key
-  "Document-level listener, since the keystroke may land inside CodeMirror rather
-  than on our own element."
-  [save]
-  (let [handler (fn [e] (when (save-key? e) (.preventDefault e) (save)))]
-    (r/create-class
-     {:display-name "save-key"
-      :component-did-mount #(.addEventListener js/document "keydown" handler)
-      :component-will-unmount #(.removeEventListener js/document "keydown" handler)
-      :reagent-render (fn [_] nil)})))
 
 (defn- entity-select
   "An optional reference on a session — its place, its trainer. Empty option
@@ -46,10 +30,9 @@
 
 (defn- add-session-form
   "The editor is always open so a new session can be typed straight away. ⌘9 is
-  scoped to this block (not the document) so it can't collide with the save
-  chord of a session being edited further down the page. The chosen place and
-  trainer stick across adds — training usually repeats in the same place, with
-  the same person."
+  scoped to this block so it can't collide with the save chord of a session
+  being edited further down the page. The chosen place and trainer stick across
+  adds — training usually repeats in the same place, with the same person."
   []
   (let [date (r/atom (state/today-str))
         notes (r/atom "")
@@ -63,7 +46,7 @@
                      (when (seq @date)
                        (state/add-session @date @notes @place-id @trainer-id
                                           (fn [] (reset! notes "") (swap! generation inc)))))]
-        [:div.note-add {:on-key-down #(when (save-key? %) (.preventDefault %) (submit))}
+        [:div.note-add {:on-key-down (keys/on-save submit)}
          [:div.note-add-head
           [:input {:type "date"
                    :value @date
@@ -102,8 +85,9 @@
                       :trainer_id @trainer-id
                       :modified_at (:modified_at session)}
                      (fn [] (reset! editing? false)))]
-          [:div.note.editing
-           [on-save-key save]
+          ;; Scoped to this note, so ⌘9 saves the editor the cursor is in and
+          ;; not every other one that happens to be open.
+          [:div.note.editing {:on-key-down (keys/on-save save)}
            [:div.note-head
             [:input {:type "date"
                      :value @date

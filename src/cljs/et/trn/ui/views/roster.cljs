@@ -9,6 +9,7 @@
   they pass those in rather than each keeping a copy of this."
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.markdown :as markdown]
             [et.trn.ui.state :as state]))
 
@@ -20,7 +21,7 @@
                      (when (seq (str/trim @name))
                        (on-add (str/trim @name) @description
                                (fn [] (reset! name "") (reset! description "")))))]
-        [:div.add-form
+        [:div.add-form {:on-key-down (keys/on-save submit)}
          [:input {:type "text"
                   :placeholder name-placeholder
                   :value @name
@@ -31,14 +32,8 @@
                   :value @description
                   :on-change #(reset! description (-> % .-target .-value))
                   :on-key-down #(when (= "Enter" (.-key %)) (submit))}]
-         [:button {:on-click submit} "Add"]]))))
-
-(defn- save-chord?
-  "⌘/Ctrl+Enter, the description editor's save. Plain Enter has to stay a plain
-  newline there: the field renders as markdown, and a paragraph needs one."
-  [e]
-  (and (= "Enter" (.-key e))
-       (or (.-metaKey e) (.-ctrlKey e))))
+         [:button {:on-click submit} "Add"]
+         [:span.key-hint "⌘9"]]))))
 
 (defn- session-count-label [n]
   (case n
@@ -67,21 +62,20 @@
                           (on-update entry
                                      {:name (str/trim @name) :description @description}
                                      (fn [] (reset! editing? false))))]
-              [:div.place-edit
+              [:div.place-edit {:on-key-down (keys/on-save save)}
                [:input {:type "text"
                         :value @name
                         :on-change #(reset! name (-> % .-target .-value))
                         :on-key-down #(when (= "Enter" (.-key %)) (save))}]
                ;; The name above keeps Enter-saves — it is one line by nature.
-               ;; This one cannot: see save-chord?.
+               ;; This one cannot: the field renders as markdown, and a
+               ;; paragraph needs its newline. ⌘9 on the block saves it.
                [:textarea {:placeholder "Description"
                            :rows 5
                            :value @description
-                           :on-change #(reset! description (-> % .-target .-value))
-                           :on-key-down #(when (save-chord? %)
-                                           (.preventDefault %)
-                                           (save))}]
+                           :on-change #(reset! description (-> % .-target .-value))}]
                [:div.card-footer
+                [:span.key-hint "⌘9"]
                 [:button {:on-click save} "Save"]
                 [:button.secondary {:on-click #(reset! editing? false)} "Cancel"]]])
             [:div

@@ -13,6 +13,7 @@
   badges. Channels themselves are managed on the Channels subpage."
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.state :as state]))
 
 (def ^:private flag-labels {"cool" "★" "supercool" "★★"})
@@ -138,13 +139,14 @@
       (let [submit (fn []
                      (when (seq (str/trim @input))
                        (state/add-yt-video (str/trim @input) #(reset! input ""))))]
-        [:div.add-form
+        [:div.add-form {:on-key-down (keys/on-save submit)}
          [:input {:type "text"
                   :placeholder "Throw in a single video — URL or id, no subscription"
                   :value @input
                   :on-change #(reset! input (-> % .-target .-value))
                   :on-key-down #(when (= "Enter" (.-key %)) (submit))}]
-         [:button {:on-click submit} "Add"]]))))
+         [:button {:on-click submit} "Add"]
+         [:span.key-hint "⌘9"]]))))
 
 ;; ---------------------------------------------------------------------------
 ;; channels subpage
@@ -170,13 +172,14 @@
           [:p.tagline
            "Channels added here are polled. Uploaders of thrown-in single videos "
            "sit here unpolled until you tick them."]]
-         [:div.add-form
+         [:div.add-form {:on-key-down (keys/on-save submit)}
           [:input {:type "text"
                    :placeholder "Channel id (UC…), channel URL, @handle, or a video URL"
                    :value @input
                    :on-change #(reset! input (-> % .-target .-value))
                    :on-key-down #(when (= "Enter" (.-key %)) (submit))}]
-          [:button {:on-click submit} "Add"]]
+          [:button {:on-click submit} "Add"]
+          [:span.key-hint "⌘9"]]
          (if (empty? channels)
            [:p.empty "No channels yet — add one above."]
            [:div.card-list

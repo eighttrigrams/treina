@@ -1,6 +1,7 @@
 (ns et.trn.ui.core
   (:require [reagent.dom.client :as rdomc]
             [reagent.core :as r]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.state :as state]
             [et.trn.ui.modals :as modals]
             [et.trn.ui.views.trainings :as trainings]
@@ -17,7 +18,7 @@
     (fn []
       (let [do-login #(state/login @username @password
                                    (fn [] (reset! username "") (reset! password "")))]
-        [:div.login-form
+        [:div.login-form {:on-key-down (keys/on-save do-login)}
          [:h2 "Sign in to Treina"]
          (when-let [error (:error @state/*app-state)]
            [:div.error error [:button.error-dismiss {:on-click state/clear-error} "×"]])

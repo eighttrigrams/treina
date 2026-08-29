@@ -1,6 +1,7 @@
 (ns et.trn.ui.views.trainings
   (:require [reagent.core :as r]
             [clojure.string :as str]
+            [et.trn.ui.keys :as keys]
             [et.trn.ui.markdown :as markdown]
             [et.trn.ui.state :as state]))
 
@@ -12,7 +13,7 @@
                      (when (seq (str/trim @name))
                        (state/add-training @name @desc
                                            (fn [] (reset! name "") (reset! desc "")))))]
-        [:div.add-form
+        [:div.add-form {:on-key-down (keys/on-save submit)}
          [:input {:type "text"
                   :placeholder "New training name"
                   :value @name
@@ -23,10 +24,11 @@
                   :value @desc
                   :on-change #(reset! desc (-> % .-target .-value))
                   :on-key-down #(when (= (.-key %) "Enter") (submit))}]
-         [:button {:on-click submit} "Add"]]))))
+         [:button {:on-click submit} "Add"]
+         [:span.key-hint "⌘9"]]))))
 
 (defn- inline-title-edit
-  "Tracker's inline rename: commits on Enter or blur, Escape drops it."
+  "Tracker's inline rename: commits on Enter, ⌘9 or blur, Escape drops it."
   [training on-done]
   (let [value (r/atom (:name training))]
     (fn [training _]
@@ -43,10 +45,12 @@
           :on-click #(.stopPropagation %)
           :on-change #(reset! value (-> % .-target .-value))
           :on-key-down (fn [e]
-                         (case (.-key e)
-                           "Enter" (do (.stopPropagation e) (commit))
-                           "Escape" (do (.stopPropagation e) (on-done))
-                           nil))
+                         (cond
+                           (keys/save-key? e) (do (.preventDefault e)
+                                                  (.stopPropagation e)
+                                                  (commit))
+                           (= "Enter" (.-key e)) (do (.stopPropagation e) (commit))
+                           (= "Escape" (.-key e)) (do (.stopPropagation e) (on-done))))
           :on-blur (fn [_] (commit))}]))))
 
 (defn- training-card
