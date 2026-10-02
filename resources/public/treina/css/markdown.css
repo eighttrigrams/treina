@@ -89,3 +89,17 @@
   border-top: 1px solid var(--border-color);
   margin: 0.8em 0;
 }
+/* Rendered markdown is drawn one top-level block per wrapper, so a copy out of
+ * it can be answered with its markdown (ui/markdown.cljs, ui/md_copy.cljs, as in
+ * tracker and cookbook). The wrappers have no padding or border, so margins
+ * collapse across them exactly as between siblings; only the rules above that
+ * notice *position* see a difference, because inside its own wrapper every
+ * paragraph is a last child and every heading a first. These put them back. */
+.markdown-blocks > .markdown-block:not(:last-child) > p:last-child {
+  margin-bottom: 0.5em;
+}
+.markdown-blocks > .markdown-block:not(:first-child) > h1:first-child,
+.markdown-blocks > .markdown-block:not(:first-child) > h2:first-child,
+.markdown-blocks > .markdown-block:not(:first-child) > h3:first-child {
+  margin-top: 0.6em;
+}

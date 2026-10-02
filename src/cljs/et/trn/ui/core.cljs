@@ -10,7 +10,8 @@
             [et.trn.ui.views.places :as places]
             [et.trn.ui.views.trainers :as trainers]
             [et.trn.ui.views.program :as program]
-            [et.trn.ui.views.youtube :as youtube]))
+            [et.trn.ui.views.youtube :as youtube]
+            [et.trn.ui.md-copy :as md-copy]))
 
 (defn login-form []
   (let [username (r/atom "")
@@ -83,4 +84,7 @@
 
 (defn init []
   (state/fetch-auth-required)
+  ;; A copy of rendered markdown puts its markdown on the clipboard (Cmd+C,
+  ;; Option+C), as in tracker and cookbook. See `ui.md-copy`.
+  (md-copy/install!)
   (rdomc/render root [app]))
