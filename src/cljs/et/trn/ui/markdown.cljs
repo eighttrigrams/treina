@@ -54,3 +54,14 @@
                         {:data-line line :data-start start
                          :dangerouslySetInnerHTML (r/unsafe-html html)}]))
           (blocks text))))
+
+(defn rendered-text
+  "The text `md` shows when it is rendered as `render` renders it, whitespace
+  and all (`inline?` for inline-only markdown, as tracker's titles are). The
+  copy's round-trip check compares it with what was selected
+  (`md-copy/round-trips?`). Parsed with `DOMParser`, whose document neither
+  runs scripts nor fetches images."
+  [md inline?]
+  (let [md (lf md)
+        html (if inline? (.parseInline marked md) (marked md))]
+    (.-textContent (.-body (.parseFromString (js/DOMParser.) html "text/html")))))
